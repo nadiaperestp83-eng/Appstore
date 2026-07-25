@@ -1,50 +1,42 @@
-name: Build
+name: playstore
+description: "Loja de aplicativos descentralizada (GitHub Releases + F-Droid)."
+publish_to: 'none'
+version: 1.0.0+1
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+environment:
+  sdk: '>=3.6.0 <4.0.0'
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+dependencies:
+  flutter:
+    sdk: flutter
 
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
+  cupertino_icons: ^1.0.8
 
-      - name: Configurar Java (necessário para build Android)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+  # --- Rede / parsing ---
+  http: ^1.2.2
 
-      - name: Configurar Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.27.1'
-          channel: 'stable'
-          cache: true
+  # --- Cache local (Isar - fork ativo, o pacote "isar" original está abandonado) ---
+  isar_community: ^3.3.2
+  isar_community_flutter_libs: ^3.3.2
+  path_provider: ^2.1.4
 
-      - name: Instalar dependências
-        run: flutter pub get
+  # --- Instalador de APK ---
+  open_file: ^3.5.7
+  permission_handler: ^11.3.1
+  device_apps: ^2.2.0
 
-      - name: Gerar código (Isar build_runner)
-        run: dart run build_runner build --delete-conflicting-outputs
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
 
-      - name: Analisar código (lints)
-        run: flutter analyze
+  # --- Geração de código do Isar ---
+  build_runner: ^2.4.13
+  isar_community_generator: ^3.3.2
 
-      - name: Rodar testes
-        run: flutter test
+flutter:
+  uses-material-design: true
 
-      - name: Build APK (release)
-        run: flutter build apk --release
-
-      - name: Upload do APK gerado
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+  # Descomente e ajuste se o seu projeto já usa uma pasta de assets:
+  # assets:
+  #   - assets/images/
