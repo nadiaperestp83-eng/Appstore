@@ -13,6 +13,36 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
+// =====================================================================
+// Correção para plugins antigos (ex: connectivity, share, webview_flutter
+// 2.x, image_picker 0.8.x, sqflite 2.0.0, flare_flutter) que nunca foram
+// atualizados pelos autores para declarar "namespace" - exigência do
+// Android Gradle Plugin 8+. Sem isso, o build falha em cada um deles,
+// um de cada vez. Esse bloco lê o "package" do AndroidManifest.xml de
+// cada plugin antigo e injeta como namespace automaticamente.
+// Assim que um pacote for atualizado/trocado por uma versão que já
+// declara namespace, esse bloco simplesmente não faz nada para ele.
+// =====================================================================
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                if (namespace == null) {
+                    def manifestFile = project.file('src/main/AndroidManifest.xml')
+                    if (manifestFile.exists()) {
+                        def manifestParser = new XmlSlurper().parse(manifestFile)
+                        def packageAttr = manifestParser.@package.text()
+                        if (packageAttr != null && !packageAttr.isEmpty()) {
+                            println "Auto-injetando namespace '${packageAttr}' para o módulo ${project.name}"
+                            namespace = packageAttr
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
