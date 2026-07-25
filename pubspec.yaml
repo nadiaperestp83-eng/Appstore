@@ -50,6 +50,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  args: ^2.4.2
 
   # Geração de código do MobX
   mobx_codegen: ^2.3.0
