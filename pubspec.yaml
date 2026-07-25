@@ -23,7 +23,7 @@ dependencies:
   image_picker: ^0.8.1+4
   sqflite: ^2.0.0+3
   shared_preferences: ^2.0.6
-  fluttertoast: ^8.2.8
+  fluttertoast: ^9.1.0
   share: ^2.0.4
   webview_flutter: ^2.0.10
   flutter_vector_icons: ^1.0.0
