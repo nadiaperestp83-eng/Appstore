@@ -21,22 +21,38 @@ if (flutterRoot == null) {
 }
 
 android {
-    compileSdkVersion 33
+    // Obrigatório a partir do AGP 8: substitui o antigo atributo "package"
+    // do AndroidManifest.xml (que não existe mais no manifest atual).
+    namespace "com.example.playstore_flutter"
+
+    compileSdkVersion 35
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+
     defaultConfig {
         applicationId "com.example.playstore_flutter"
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 35
         versionCode 1
         versionName "1.0.0"
     }
 
     buildTypes {
         release {
+            // Assinado com a chave debug por enquanto (padrão de projetos novos).
+            // Antes de publicar de verdade na Play Store, troque por uma
+            // signingConfig própria com seu keystore.
             signingConfig signingConfigs.debug
         }
     }
