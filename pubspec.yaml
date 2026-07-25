@@ -18,12 +18,12 @@ dependencies:
   # pubspec te substituiu o arquivo original por engano).
   # =========================================================
   nb_utils: ^4.4.1
-  google_fonts: ^6.2.1
+  google_fonts: ^2.1.0
   cached_network_image: ^3.0.0
   image_picker: ^0.8.1+4
   sqflite: ^2.0.0+3
   shared_preferences: ^2.0.6
-  fluttertoast: ^8.0.7
+  fluttertoast: ^9.1.0
   share: ^2.0.4
   webview_flutter: ^2.0.10
   flutter_vector_icons: ^1.0.0
