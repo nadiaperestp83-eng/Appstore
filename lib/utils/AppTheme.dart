@@ -12,9 +12,7 @@ class AppThemeData {
     scaffoldBackgroundColor: whiteColor,
     primaryColor: Colors.blue,
     primaryColorDark: Colors.white,
-    errorColor: Colors.red,
     hoverColor: Colors.white54,
-    accentColor: Colors.blue,
     dividerColor: viewLineColor,
     cursorColor: Colors.black,
     fontFamily: GoogleFonts.nunito().fontFamily,
@@ -23,18 +21,15 @@ class AppThemeData {
       iconTheme: IconThemeData(color: textPrimaryColor),
     ),
     colorScheme: ColorScheme.light(
-        /*primary: appColorPrimary,
-      primaryVariant: appColorPrimary,*/
-        ),
+      secondary: Colors.blue,
+      error: Colors.red,
+    ),
     cardTheme: CardTheme(color: Colors.white),
     iconTheme: IconThemeData(color: textPrimaryColor),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: whiteColor),
     textTheme: TextTheme(
-/*
-      button: TextStyle(color: appColorPrimary),
-*/
-      headline6: TextStyle(color: textPrimaryColor),
-      subtitle2: TextStyle(color: textSecondaryColor),
+      titleLarge: TextStyle(color: textPrimaryColor),
+      titleSmall: TextStyle(color: textSecondaryColor),
     ),
     visualDensity: VisualDensity.adaptivePlatformDensity,
   ).copyWith(
@@ -48,10 +43,8 @@ class AppThemeData {
   static final ThemeData darkTheme = ThemeData(
     scaffoldBackgroundColor: appBackgroundColorDark,
     highlightColor: appBackgroundColorDark,
-    errorColor: Color(0xFFCF6676),
     appBarTheme: AppBarTheme(color: appBackgroundColorDark, iconTheme: IconThemeData(color: whiteColor)),
     primaryColor: color_primary_black,
-    accentColor: whiteColor,
     dividerColor: Color(0xFFDADADA).withOpacity(0.3),
     primaryColorDark: color_primary_black,
     cursorColor: Colors.white,
@@ -59,20 +52,21 @@ class AppThemeData {
     fontFamily: GoogleFonts.nunito().fontFamily,
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: appBackgroundColorDark),
     primaryTextTheme: TextTheme(
-      headline6: primaryTextStyle(color: Colors.white),
-      overline: primaryTextStyle(color: Colors.white),
+      titleLarge: primaryTextStyle(color: Colors.white),
+      labelSmall: primaryTextStyle(color: Colors.white),
     ),
     colorScheme: ColorScheme.dark(
       primary: appBackgroundColorDark,
       onPrimary: cardBackgroundBlackDark,
-      primaryVariant: color_primary_black,
+      secondary: whiteColor,
+      error: Color(0xFFCF6676),
     ),
     cardTheme: CardTheme(color: cardBackgroundBlackDark),
     iconTheme: IconThemeData(color: whiteColor),
     textTheme: TextTheme(
-      button: TextStyle(color: color_primary_black),
-      headline6: TextStyle(color: whiteColor),
-      subtitle2: TextStyle(color: Colors.white54),
+      labelLarge: TextStyle(color: color_primary_black),
+      titleLarge: TextStyle(color: whiteColor),
+      titleSmall: TextStyle(color: Colors.white54),
     ),
     visualDensity: VisualDensity.adaptivePlatformDensity,
   ).copyWith(
