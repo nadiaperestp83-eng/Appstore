@@ -1,40 +1,42 @@
-name: playstore_flutter
-description: A new Flutter project.
-
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-
+name: playstore
+description: "Loja de aplicativos descentralizada (GitHub Releases + F-Droid)."
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
+  cupertino_icons: ^1.0.8
 
-  cupertino_icons: ^1.0.3
-  nb_utils: ^4.4.1
-  google_fonts: ^2.1.0
-  mobx: ^2.0.1
-  flutter_mobx: ^2.0.0
-  flutter_vector_icons: ^1.0.0
-  flutter_staggered_animations: 1.0.0
-  flare_flutter: ^3.0.1
-  webview_flutter: ^2.0.10
-  image_picker: ^0.8.1+4
-  cached_network_image: ^3.0.0
-  share: ^2.0.4
+  # --- Rede / parsing ---
+  http: ^1.2.2
+
+  # --- Cache local (Isar) ---
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  path_provider: ^2.1.4
+
+  # --- Instalador de APK ---
+  open_file: ^3.5.7
+  permission_handler: ^11.3.1
+  device_apps: ^2.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  mobx_codegen:
-  build_runner: ^2.0.6
-  http: ^1.2.2
+  flutter_lints: ^4.0.0
+
+  # --- Geração de código do Isar ---
+  build_runner: ^2.4.13
+  isar_generator: ^3.1.0+1
 
 flutter:
-
   uses-material-design: true
 
-  assets:
-    - images/playStore/
+  # Descomente e ajuste se o seu projeto já usa uma pasta de assets:
+  # assets:
+  #   - assets/images/
