@@ -15,6 +15,62 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      - name: Aplicar correções automáticas de código legado
+        run: |
+          # Arquivos que só precisam do import do shim FlatButton/RaisedButton
+          FILES_FLATBUTTON=(
+            "lib/screens/PSNavigationScreen.dart"
+            "lib/screens/PSSubscriptionsScreen.dart"
+            "lib/screens/PSPurchaseHistoryFragment.dart"
+            "lib/screens/PSRewardsFragment.dart"
+            "lib/screens/PSInstalledFragment.dart"
+            "lib/screens/PSLibraryFragment.dart"
+            "lib/screens/PSUpdatesFragments.dart"
+            "lib/components/PSTopChartsFragment.dart"
+            "lib/components/PSBookReleasesFragment.dart"
+            "lib/components/PSBooksTopSellingFragment.dart"
+            "lib/screens/PSDetailScreen.dart"
+            "lib/screens/PSBooKDetailsScreen.dart"
+            "lib/screens/PSFlagPropertiesScreen.dart"
+            "lib/screens/PSRatingReviewScreen.dart"
+          )
+
+          for f in "${FILES_FLATBUTTON[@]}"; do
+            if [ -f "$f" ]; then
+              if ! grep -q "legacy_buttons.dart" "$f"; then
+                sed -i "1i import 'package:playstore_flutter/utils/legacy_buttons.dart';" "$f"
+                echo "OK: import adicionado em $f"
+              else
+                echo "OK: $f já tinha o import"
+              fi
+            else
+              echo "AVISO: arquivo não encontrado: $f (verifique o caminho)"
+            fi
+          done
+
+          # BottomNavigationBarItem: title (Widget) -> label (String)
+          if [ -f "lib/screens/PSDashboardScreen.dart" ]; then
+            sed -i "s/title: Text('Games'),/label: 'Games',/" lib/screens/PSDashboardScreen.dart
+            sed -i "s/title: Text('Apps'),/label: 'Apps',/" lib/screens/PSDashboardScreen.dart
+            sed -i "s/title: Text('Movies'),/label: 'Movies',/" lib/screens/PSDashboardScreen.dart
+            sed -i "s/title: Text('Books'),/label: 'Books',/" lib/screens/PSDashboardScreen.dart
+            echo "OK: PSDashboardScreen.dart corrigido"
+          else
+            echo "AVISO: PSDashboardScreen.dart não encontrado"
+          fi
+
+          # Scaffold.of(context).showSnackBar -> ScaffoldMessenger.of(context).showSnackBar
+          if [ -f "lib/screens/PSRatingReviewScreen.dart" ]; then
+            sed -i "s/Scaffold\.of(context)\.showSnackBar/ScaffoldMessenger.of(context).showSnackBar/g" lib/screens/PSRatingReviewScreen.dart
+            echo "OK: PSRatingReviewScreen.dart (showSnackBar) corrigido"
+          fi
+
+          # accentColor removido do ThemeData: remove a linha (sem substituto direto)
+          if [ -f "lib/utils/AppWidget.dart" ]; then
+            sed -i "/accentColor: colorBlue,/d" lib/utils/AppWidget.dart
+            echo "OK: AppWidget.dart (accentColor) corrigido"
+          fi
+
       - name: Configurar Java (necessário para build Android)
         uses: actions/setup-java@v4
         with:
@@ -24,9 +80,9 @@ jobs:
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.8'
+          flutter-version: '3.44.6'
           channel: 'stable'
-          cache: false
+          cache: true
 
       - name: Instalar dependências
         run: flutter pub get
@@ -42,7 +98,7 @@ jobs:
         run: flutter test
 
       - name: Build APK (release)
-        run: flutter build apk --release --dart-define=CI=true
+        run: flutter build apk --release
 
       - name: Upload do APK gerado
         uses: actions/upload-artifact@v4
