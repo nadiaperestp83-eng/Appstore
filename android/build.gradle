@@ -9,9 +9,6 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(':app')
-}
 
 // =====================================================================
 // Correção para plugins antigos (ex: connectivity, share, webview_flutter
@@ -22,6 +19,11 @@ subprojects {
 // cada plugin antigo e injeta como namespace automaticamente.
 // Assim que um pacote for atualizado/trocado por uma versão que já
 // declara namespace, esse bloco simplesmente não faz nada para ele.
+//
+// IMPORTANTE: esse bloco precisa vir ANTES do evaluationDependsOn(':app')
+// abaixo, senão o Gradle já avalia o :app antes de registrar o
+// afterEvaluate nele, e o build quebra com
+// "Cannot run Project.afterEvaluate(Closure) when the project is already evaluated".
 // =====================================================================
 subprojects {
     afterEvaluate { project ->
@@ -41,6 +43,10 @@ subprojects {
             }
         }
     }
+}
+
+subprojects {
+    project.evaluationDependsOn(':app')
 }
 
 tasks.register("clean", Delete) {
