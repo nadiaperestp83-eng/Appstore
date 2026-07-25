@@ -18,7 +18,7 @@ dependencies:
   # pubspec te substituiu o arquivo original por engano).
   # =========================================================
   nb_utils: ^4.4.1
-  google_fonts: ^2.1.0
+  google_fonts: ^6.2.1
   cached_network_image: ^3.0.0
   image_picker: ^0.8.1+4
   sqflite: ^2.0.0+3
