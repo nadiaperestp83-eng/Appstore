@@ -65,12 +65,6 @@ jobs:
             echo "OK: PSRatingReviewScreen.dart (showSnackBar) corrigido"
           fi
 
-          # accentColor removido do ThemeData: remove a linha (sem substituto direto)
-          if [ -f "lib/utils/AppWidget.dart" ]; then
-            sed -i "/accentColor: colorBlue,/d" lib/utils/AppWidget.dart
-            echo "OK: AppWidget.dart (accentColor) corrigido"
-          fi
-
       - name: Configurar Java (necessário para build Android)
         uses: actions/setup-java@v4
         with:
