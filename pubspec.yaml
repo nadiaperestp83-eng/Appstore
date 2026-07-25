@@ -15,9 +15,9 @@ dependencies:
   # --- Rede / parsing ---
   http: ^1.2.2
 
-  # --- Cache local (Isar) ---
-  isar: ^3.1.0+1
-  isar_flutter_libs: ^3.1.0+1
+  # --- Cache local (Isar - fork ativo, o pacote "isar" original está abandonado) ---
+  isar_community: ^3.3.2
+  isar_community_flutter_libs: ^3.3.2
   path_provider: ^2.1.4
 
   # --- Instalador de APK ---
@@ -32,7 +32,7 @@ dev_dependencies:
 
   # --- Geração de código do Isar ---
   build_runner: ^2.4.13
-  isar_generator: ^3.1.0+1
+  isar_community_generator: ^3.3.2
 
 flutter:
   uses-material-design: true
