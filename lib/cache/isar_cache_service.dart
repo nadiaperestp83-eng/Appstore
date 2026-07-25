@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'cached_store_app.dart';
 import '../models/store_app.dart';
