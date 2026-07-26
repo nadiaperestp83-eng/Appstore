@@ -295,6 +295,13 @@ PSGameModel _hubAppToGameModel(HubApp hubApp) {
     downloadUrl: preferred.downloadUrl,
     version: preferred.version,
     preferredRepoLabel: preferred.repoLabel,
-    availableSourceLabels: hubApp.availableSources.map((s) => s.repoLabel).toList(),
+    availableSourceOptions: hubApp.availableSources
+        .map((s) => PSAppSourceOption(
+              repoLabel: s.repoLabel,
+              version: s.version,
+              downloadUrl: s.downloadUrl,
+              source: s.source,
+            ))
+        .toList(),
   );
 }
