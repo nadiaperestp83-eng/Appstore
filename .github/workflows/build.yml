@@ -103,40 +103,40 @@ jobs:
             echo "OK: PSRatingReviewScreen.dart (showSnackBar) corrigido"
           fi
 
-      - name: Forçar SDK 34 em todos os módulos Gradle (Corrigir erro lStar)
+      - name: Corrigir SDK 34 de forma segura no Gradle
         run: |
-          # Atualiza build.gradle principal se existir
+          # Remove blocos duplicados anteriores se houver
           if [ -f "android/build.gradle" ]; then
-            sed -i 's/compileSdkVersion 30/compileSdkVersion 34/g' android/build.gradle || true
-            sed -i 's/targetSdkVersion 30/targetSdkVersion 34/g' android/build.gradle || true
-          fi
-          
-          # Atualiza app/build.gradle para injetar compileSdk e targetSdk 34 globalmente
-          BUILD_GRADLE="android/app/build.gradle"
-          if [ -f "$BUILD_GRADLE" ]; then
-            sed -i 's/compileSdkVersionflutter.compileSdkVersion/compileSdkVersion 34/g' "$BUILD_GRADLE" || true
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' "$BUILD_GRADLE" || true
-            sed -i 's/targetSdkVersionflutter.targetSdkVersion/targetSdkVersion 34/g' "$BUILD_GRADLE" || true
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' "$BUILD_GRADLE" || true
-            
-            # Adiciona subprojects para forçar plugins antigos como device_apps a usarem o SDK 34
-            echo "" >> android/build.gradle
-            echo "subprojects {" >> android/build.gradle
-            echo "    afterEvaluate { project ->" >> android/build.gradle
-            echo "        if (project.hasProperty('android')) {" >> android/build.gradle
-            echo "            project.android {" >> android/build.gradle
-            echo "                if (namespace == null) {" >> android/build.gradle
-            echo "                    namespace project.group" >> android/build.gradle
-            echo "                }" >> android/build.gradle
-            echo "                compileSdkVersion 34" >> android/build.gradle
-            echo "                defaultConfig {" >> android/build.gradle
-            echo "                    targetSdkVersion 34" >> android/build.gradle
-            echo "                }" >> android/build.gradle
-            echo "            }" >> android/build.gradle
-            echo "        }" >> android/build.gradle
-            echo "    }" >> android/build.gradle
-            echo "}" >> android/build.gradle
-            echo "OK: Configuração global de SDK 34 injetada nos subprojetos."
+            # Adiciona a configuração de subprojetos usando avaliação segura com gradle.projectsEvaluated
+            python3 -c '
+            path = "android/build.gradle"
+            with open(path, "r") as f:
+                content = f.read()
+            snippet = """
+            subprojects {
+                project.evaluationDependsOn(":app")
+            }
+            subprojects {
+                afterEvaluate { project ->
+                    if (project.hasProperty("android")) {
+                        project.android {
+                            if (namespace == null) {
+                                namespace project.group
+                            }
+                            compileSdkVersion 34
+                            defaultConfig {
+                                targetSdkVersion 34
+                            }
+                        }
+                    }
+                }
+            }
+            """
+            if "subprojects {" not in content:
+                with open(path, "a") as f:
+                    f.write(snippet)
+                print("OK: Configuração segura adicionada ao build.gradle")
+            '
           fi
 
       - name: Configurar Java (necessário para build Android)
