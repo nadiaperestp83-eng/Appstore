@@ -32,6 +32,8 @@ class PSBookScreenState extends State<PSBookScreen> {
   List<String> list2 = ['Indian Cinema', 'Offline'];
   List<PSReviews> getReviewsList = getReviewList();
 
+  PSAppSourceOption? selectedSource;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +49,78 @@ class PSBookScreenState extends State<PSBookScreen> {
     if (mounted) super.setState(fn);
   }
 
+  PSAppSourceOption? get _currentSource {
+    if (selectedSource != null) return selectedSource;
+    final options = widget.data?.availableSourceOptions;
+    if (options == null || options.isEmpty) return null;
+    return options.firstWhere(
+      (o) => o.repoLabel == widget.data?.preferredRepoLabel,
+      orElse: () => options.first,
+    );
+  }
+
+  void _openSourcePicker() {
+    final options = widget.data?.availableSourceOptions ?? [];
+    if (options.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              16.height,
+              Text('Escolher fonte', style: boldTextStyle(size: 16)),
+              8.height,
+              ...options.map((option) {
+                final isSelected = option.repoLabel == _currentSource?.repoLabel && option.version == _currentSource?.version;
+                return ListTile(
+                  leading: Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: isSelected ? psColorGreen : Colors.grey),
+                  title: Text(option.repoLabel),
+                  subtitle: Text('Versão ${option.version}'),
+                  onTap: () {
+                    setState(() {
+                      selectedSource = option;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              }),
+              16.height,
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _sourceSelectorRow() {
+    if (widget.data == null || !widget.data!.hasMultipleSources) return SizedBox();
+    final current = _currentSource;
+    return InkWell(
+      onTap: _openSourcePicker,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: EdgeInsets.only(left: 16, right: 16, top: 8),
+        decoration: boxDecoration(color: appDividerColor, radius: 16),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.source_outlined, size: 16, color: psColorGreen),
+            6.width,
+            Text(
+              'Disponível em ${widget.data!.availableSourceOptions!.length} fontes${current != null ? " · ${current.repoLabel}" : ""}',
+              style: secondaryTextStyle(size: 12, color: psColorGreen),
+            ),
+            4.width,
+            Icon(Icons.arrow_drop_down, size: 18, color: psColorGreen),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +133,7 @@ class PSBookScreenState extends State<PSBookScreen> {
           PopupMenuButton(
             onSelected: (dynamic value) {
               if (value == 1) {
-                Share.share("abc");
+                SharePlus.instance.share(ShareParams(text: "abc"));
               }
             },
             icon: Icon(Icons.more_vert_rounded),
@@ -97,6 +171,7 @@ class PSBookScreenState extends State<PSBookScreen> {
                 ).expand(),
               ],
             ),
+            _sourceSelectorRow(),
             24.height,
             Container(
               height: 50,
@@ -351,25 +426,29 @@ class PSBookScreenState extends State<PSBookScreen> {
                         children: [
                           Text('Was this review helpful?', style: secondaryTextStyle()),
                           16.width.expand(),
-                          FlatButton(
-                            highlightColor: Colors.red[200],
-                            height: 25,
-                            minWidth: 55,
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              minimumSize: Size(55, 25),
+                              shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey[400]!), borderRadius: BorderRadius.circular(20)),
+                            ).copyWith(
+                              overlayColor: WidgetStateProperty.all(Colors.red[200]),
+                            ),
                             onPressed: () {
                               toastLong('Thanks for the feedback');
                             },
                             child: Text('Yes'),
-                            shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey[400]!), borderRadius: BorderRadius.circular(20)),
                           ).paddingRight(10),
-                          FlatButton(
-                            highlightColor: Colors.red[200],
-                            height: 25,
-                            minWidth: 55,
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              minimumSize: Size(55, 25),
+                              shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey[400]!), borderRadius: BorderRadius.circular(20)),
+                            ).copyWith(
+                              overlayColor: WidgetStateProperty.all(Colors.red[200]),
+                            ),
                             onPressed: () {
                               toastLong('Thanks for the feedback');
                             },
                             child: Text('No'),
-                            shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey[400]!), borderRadius: BorderRadius.circular(20)),
                           ),
                         ],
                       ).paddingOnly(left: 16, right: 16),
