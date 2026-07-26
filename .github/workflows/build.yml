@@ -15,36 +15,66 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Padronizar referencias e injetar imports de PSBookDetailsScreen
+      - name: Padronizar e Injetar Imports via Python (Blindado)
         run: |
-          # Corrige o arquivo físico se estiver com dois K
-          if [ -f "lib/screens/PSBooKDetailsScreen.dart" ]; then
-            mv lib/screens/PSBooKDetailsScreen.dart lib/screens/PSBookDetailsScreen.dart
-            echo "OK: Arquivo renomeado para PSBookDetailsScreen.dart"
-          fi
+          python3 - << 'EOF'
+          import os
+          import glob
 
-          # Garante que a classe interna dentro do arquivo seja PSBookDetailsScreen
-          if [ -f "lib/screens/PSBookDetailsScreen.dart" ]; then
-            sed -i 's/class PSBooKDetailsScreen/class PSBookDetailsScreen/g' lib/screens/PSBookDetailsScreen.dart
-            echo "OK: Classe interna corrigida para PSBookDetailsScreen"
-          fi
+          # 1. Renomeia o arquivo físico se estiver com dois K
+          if os.path.exists("lib/screens/PSBooKDetailsScreen.dart"):
+              os.rename("lib/screens/PSBooKDetailsScreen.dart", "lib/screens/PSBookDetailsScreen.dart")
+              print("OK: Arquivo renomeado para PSBookDetailsScreen.dart")
 
-          # Substitui todas as chamadas em todo o projeto de PSBooKDetailsScreen para PSBookDetailsScreen
-          find lib/ -type f -name "*.dart" -exec sed -i 's/PSBooKDetailsScreen/PSBookDetailsScreen/g' {} +
-          echo "OK: Todas as referências ajustadas para PSBookDetailsScreen"
+          # 2. Varre todos os arquivos .dart do projeto
+          for filepath in glob.glob("lib/**/*.dart", recursive=True):
+              with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                  content = f.read()
 
-          # Remove qualquer import antigo incorreto da tela de detalhes em todos os arquivos Dart
-          find lib/ -type f -name "*.dart" -exec sed -i '/import.*PSBoo*KDetailsScreen\.dart.*/d' {} +
+              modified = False
 
-          # Adiciona o import correto usando o caminho completo por package em todos os arquivos que usam a classe
-          for f in $(find lib/ -type f -name "*.dart"); do
-            if [ "$f" != "lib/screens/PSBookDetailsScreen.dart" ] && grep -q "PSBookDetailsScreen" "$f"; then
-              if ! grep -q "package:playstore_flutter/screens/PSBookDetailsScreen.dart" "$f"; then
-                sed -i "1i import 'package:playstore_flutter/screens/PSBookDetailsScreen.dart';" "$f"
-                echo "OK: Import injetado em $f"
-              fi
-            fi
-          done
+              # Corrige nome da classe interna se necessário
+              if "class PSBooKDetailsScreen" in content:
+                  content = content.replace("class PSBooKDetailsScreen", "class PSBookDetailsScreen")
+                  modified = True
+
+              # Substitui chamadas antigas com dois K
+              if "PSBooKDetailsScreen" in content:
+                  content = content.replace("PSBooKDetailsScreen", "PSBookDetailsScreen")
+                  modified = True
+
+              # Se o arquivo usa a classe (mas não é o próprio arquivo da tela)
+              if "PSBookDetailsScreen" in content and filepath != "lib/screens/PSBookDetailsScreen.dart":
+                  import_statement = "import 'package:playstore_flutter/screens/PSBookDetailsScreen.dart';"
+                  
+                  # Remove imports antigos errados se houver
+                  lines = content.splitlines()
+                  new_lines = []
+                  has_import = False
+                  
+                  for line in lines:
+                      if "PSBooKDetailsScreen.dart" in line or "PSBookDetailsScreen.dart" in line:
+                          continue  # Remove para reinserir o correto no topo
+                      new_lines.append(line)
+                      if import_statement in line:
+                          has_import = True
+
+                  content = "\n".join(new_lines)
+
+                  # Insere o import correto logo após o primeiro import existente ou no topo
+                  if not has_import:
+                      if "import " in content:
+                          parts = content.split("import ", 1)
+                          content = parts[0] + import_statement + "\nimport " + parts[1]
+                      else:
+                          content = import_statement + "\n" + content
+                      modified = True
+
+              if modified:
+                  with open(filepath, "w", encoding="utf-8") as f:
+                      f.write(content)
+                  print(f"OK: Processado e corrigido -> {filepath}")
+          EOF
 
       - name: Aplicar correções automáticas de código legado
         run: |
