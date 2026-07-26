@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nb_utils/nb_utils.dart';
@@ -14,7 +15,7 @@ class AppThemeData {
     primaryColorDark: Colors.white,
     hoverColor: Colors.white54,
     dividerColor: viewLineColor,
-    cursorColor: Colors.black,
+    textSelectionTheme: TextSelectionThemeData(cursorColor: Colors.black),
     fontFamily: GoogleFonts.nunito().fontFamily,
     appBarTheme: AppBarTheme(
       color: appLayout_background,
@@ -47,7 +48,7 @@ class AppThemeData {
     primaryColor: color_primary_black,
     dividerColor: Color(0xFFDADADA).withOpacity(0.3),
     primaryColorDark: color_primary_black,
-    cursorColor: Colors.white,
+    textSelectionTheme: TextSelectionThemeData(cursorColor: Colors.white),
     hoverColor: Colors.black12,
     fontFamily: GoogleFonts.nunito().fontFamily,
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: appBackgroundColorDark),
