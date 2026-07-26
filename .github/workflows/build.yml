@@ -69,7 +69,7 @@ jobs:
             "lib/components/PSTopChartsFragment.dart"
             "lib/components/PSBookReleasesFragment.dart"
             "lib/components/PSBooksTopSellingFragment.dart"
-            "lib/screens/PSDetailScreen.dart"
+            "lib/screens/PSDetailScreen.dart`"
             "lib/screens/PSBookScreen.dart"
             "lib/screens/PSFlagPropertiesScreen.dart"
             "lib/screens/PSRatingReviewScreen.dart"
@@ -83,8 +83,6 @@ jobs:
               else
                 echo "OK: $f já tinha o import"
               fi
-            else
-              echo "AVISO: arquivo não encontrado: $f (verifique o caminho)"
             fi
           done
 
@@ -93,48 +91,11 @@ jobs:
             sed -i "s/title: Text('Apps'),/label: 'Apps',/" lib/screens/PSDashboardScreen.dart
             sed -i "s/title: Text('Movies'),/label: 'Movies',/" lib/screens/PSDashboardScreen.dart
             sed -i "s/title: Text('Books'),/label: 'Books',/" lib/screens/PSDashboardScreen.dart
-            echo "OK: PSDashboardScreen.dart corrigido"
-          else
-            echo "AVISO: PSDashboardScreen.dart não encontrado"
           fi
 
           if [ -f "lib/screens/PSRatingReviewScreen.dart" ]; then
             sed -i "s/Scaffold\.of(context)\.showSnackBar/ScaffoldMessenger.of(context)\.showSnackBar/g" lib/screens/PSRatingReviewScreen.dart
-            echo "OK: PSRatingReviewScreen.dart (showSnackBar) corrigido"
           fi
-
-      - name: Corrigir SDK 34 de forma segura no Gradle
-        run: |
-          python3 - << 'EOF'
-          import os
-
-          path = "android/build.gradle"
-          if os.path.exists(path):
-              with open(path, "r", encoding="utf-8") as f:
-                  content = f.read()
-              
-              snippet = """
-          subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty("android")) {
-                      project.android {
-                          if (namespace == null) {
-                              namespace project.group
-                          }
-                          compileSdkVersion 34
-                          defaultConfig {
-                              targetSdkVersion 34
-                          }
-                      }
-                  }
-              }
-          }
-          """
-              if "subprojects {" not in content:
-                  with open(path, "a", encoding="utf-8") as f:
-                      f.write(snippet)
-                  print("OK: Configuração segura adicionada ao build.gradle")
-          EOF
 
       - name: Configurar Java (necessário para build Android)
         uses: actions/setup-java@v4
@@ -159,6 +120,30 @@ jobs:
 
       - name: Instalar dependências
         run: flutter pub get
+
+      - name: Forçar SDK 34 diretamente no plugin device_apps (Corrigir erro lStar)
+        run: |
+          python3 - << 'EOF'
+          import glob
+
+          # Localiza o build.gradle do plugin device_apps no cache do pub
+          for build_gradle in glob.glob("/home/runner/.pub-cache/hosted/pub.dev/device_apps-*/android/build.gradle"):
+              with open(build_gradle, "r", encoding="utf-8") as f:
+                  content = f.read()
+
+              # Substitui ou injeta compileSdkVersion e targetSdkVersion para 34
+              if "compileSdkVersion" in content:
+                  content = content.replace("compileSdkVersion 30", "compileSdkVersion 34")
+                  content = content.replace("compileSdkVersion flutter.compileSdkVersion", "compileSdkVersion 34")
+              
+              # Adiciona bloco android se necessário ou injeta as versões diretamente
+              if "defaultConfig {" in content:
+                  content = content.replace("defaultConfig {", "defaultConfig {\n        minSdkVersion 21\n        targetSdkVersion 34\n        compileSdkVersion 34")
+
+              with open(build_gradle, "w", encoding="utf-8") as f:
+                  f.write(content)
+              print(f"OK: Corrigido build.gradle do plugin em {build_gradle}")
+          EOF
 
       - name: Gerar código (Isar build_runner)
         run: dart run build_runner build --delete-conflicting-outputs
