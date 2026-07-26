@@ -3,6 +3,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
+import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 
 class PSMStudiosFragment extends StatelessWidget {
   final PSGameModel data;
