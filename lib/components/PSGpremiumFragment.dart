@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
-import 'package:playstore_flutter/screens/PSDetailScreen.dart';
+import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
 
 class PSGpremiumFragment extends StatelessWidget {
@@ -20,7 +20,7 @@ class PSGpremiumFragment extends StatelessWidget {
           child: Column(
             children: [
               commonCacheImageWidget(data.imgMain, height: 110, width: 220, fit: BoxFit.cover).cornerRadiusWithClipRRect(10).onTap(() {
-                PSDetailScreen(data: data).launch(context);
+                PSBooKDetailsScreen(data: data).launch(context);
               }),
               8.height,
               Row(
