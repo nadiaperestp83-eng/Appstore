@@ -30,7 +30,7 @@ jobs:
             "lib/components/PSBookReleasesFragment.dart"
             "lib/components/PSBooksTopSellingFragment.dart"
             "lib/screens/PSDetailScreen.dart"
-            "lib/screens/PSBooKDetailsScreen.dart"
+            "lib/screens/PSBookScreen.dart"
             "lib/screens/PSFlagPropertiesScreen.dart"
             "lib/screens/PSRatingReviewScreen.dart"
           )
@@ -92,7 +92,7 @@ jobs:
         run: flutter test
 
       - name: Build APK (release)
-        run: flutter build apk --release --target-platform android-arm64
+        run: flutter build apk --release
 
       - name: Upload do APK gerado
         uses: actions/upload-artifact@v4
