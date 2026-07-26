@@ -16,7 +16,7 @@ import 'package:playstore_flutter/utils/AppColors.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PSDetailScreen extends StatefulWidget {
   static String tag = '/PSDetailScreen';
@@ -102,7 +102,7 @@ class PSDetailScreenState extends State<PSDetailScreen> {
           PopupMenuButton(
             onSelected: (dynamic value) {
               if (value == 1) {
-                Share.share("abc");
+                SharePlus.instance.share(ShareParams(text: "abc"));
               } else if (value == 2) {
                 PSFlagPropertiesScreen(data7: widget.data).launch(context);
               }
