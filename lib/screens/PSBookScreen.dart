@@ -15,19 +15,19 @@ import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
 import 'package:share_plus/share_plus.dart';
 
-class PSBookDetailsScreen extends StatefulWidget {
+class PSBookScreen extends StatefulWidget {
   static String tag = '/PSBookDetalisScreen';
 
   final PSGameModel? data;
   final List<PSAppbarModel>? list;
 
-  PSBookDetailsScreen({this.data, this.list});
+  PSBookScreen({this.data, this.list});
 
   @override
-  PSBookDetailsScreenState createState() => PSBookDetailsScreenState();
+  PSBookScreenState createState() => PSBookScreenState();
 }
 
-class PSBookDetailsScreenState extends State<PSBookDetailsScreen> {
+class PSBookScreenState extends State<PSBookScreen> {
   var randomNumber = Random();
   List<String> list2 = ['Indian Cinema', 'Offline'];
   List<PSReviews> getReviewsList = getReviewList();
