@@ -59,7 +59,7 @@ class PSBookDetailsScreenState extends State<PSBookDetailsScreen> {
           PopupMenuButton(
             onSelected: (dynamic value) {
               if (value == 1) {
-                SharePlus.instance.share(ShareParams(text: "abc"));
+                Share.share("abc");
               }
             },
             icon: Icon(Icons.more_vert_rounded),
