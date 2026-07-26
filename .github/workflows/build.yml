@@ -15,65 +15,75 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Padronizar e Injetar Imports via Python (Blindado)
+      - name: Padronizar e Injetar Imports via Python (Blindado Avançado)
         run: |
           python3 - << 'EOF'
           import os
           import glob
+          import re
 
-          # 1. Renomeia o arquivo físico se estiver com dois K
-          if os.path.exists("lib/screens/PSBooKDetailsScreen.dart"):
-              os.rename("lib/screens/PSBooKDetailsScreen.dart", "lib/screens/PSBookDetailsScreen.dart")
-              print("OK: Arquivo renomeado para PSBookDetailsScreen.dart")
+          # 1. Garante que o arquivo físico da tela de detalhes esteja correto
+          target_file = "lib/screens/PSBookDetailsScreen.dart"
+          bad_files = glob.glob("lib/**/PSBoo*KDetailsScreen.dart", recursive=True) + glob.glob("lib/**/PSBoo*kDetailsScreen.dart", recursive=True)
+          
+          for bf in bad_files:
+              if bf != target_file:
+                  if os.path.exists(target_file):
+                      os.remove(bf) # Remove duplicados errados
+                  else:
+                      os.rename(bf, target_file)
+                  print(f"OK: Arquivo unificado para {target_file}")
 
-          # 2. Varre todos os arquivos .dart do projeto
+          if os.path.exists(target_file):
+              with open(target_file, "r", encoding="utf-8", errors="ignore") as f:
+                  content = f.read()
+              
+              # Garante que a classe principal dentro do arquivo se chame exatamente PSBookDetailsScreen
+              content = re.sub(r'class\s+PSBoo+K?DetailsScreen\w*', 'class PSBookDetailsScreen', content)
+              
+              with open(target_file, "w", encoding="utf-8") as f:
+                  f.write(content)
+              print("OK: Classe interna da tela principal padronizada.")
+
+          # 2. Varre todos os arquivos .dart do projeto para corrigir referências e imports
           for filepath in glob.glob("lib/**/*.dart", recursive=True):
               with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                   content = f.read()
 
               modified = False
 
-              # Corrige nome da classe interna se necessário
-              if "class PSBooKDetailsScreen" in content:
-                  content = content.replace("class PSBooKDetailsScreen", "class PSBookDetailsScreen")
-                  modified = True
-
-              # Substitui chamadas antigas com dois K
-              if "PSBooKDetailsScreen" in content:
-                  content = content.replace("PSBooKDetailsScreen", "PSBookDetailsScreen")
+              # Corrige qualquer citação com grafia errada (dois K ou maiúsculas erradas)
+              if re.search(r'PSBoo+K?DetailsScreen', content) and filepath != target_file:
+                  content = re.sub(r'PSBoo+K?DetailsScreen', 'PSBookDetailsScreen', content)
                   modified = True
 
               # Se o arquivo usa a classe (mas não é o próprio arquivo da tela)
-              if "PSBookDetailsScreen" in content and filepath != "lib/screens/PSBookDetailsScreen.dart":
+              if "PSBookDetailsScreen" in content and filepath != target_file:
                   import_statement = "import 'package:playstore_flutter/screens/PSBookDetailsScreen.dart';"
                   
-                  # Remove imports antigos errados se houver
+                  # Remove todos os imports antigos relacionados a essa tela para evitar duplicidade
                   lines = content.splitlines()
                   new_lines = []
-                  has_import = False
-                  
                   for line in lines:
-                      if "PSBooKDetailsScreen.dart" in line or "PSBookDetailsScreen.dart" in line:
-                          continue  # Remove para reinserir o correto no topo
+                      if "DetailsScreen.dart" in line:
+                          continue
                       new_lines.append(line)
-                      if import_statement in line:
-                          has_import = True
-
+                  
                   content = "\n".join(new_lines)
 
-                  # Insere o import correto logo após o primeiro import existente ou no topo
-                  if not has_import:
+                  # Insere o import correto logo após o primeiro 'import' encontrado ou no topo
+                  if import_statement not in content:
                       if "import " in content:
                           parts = content.split("import ", 1)
                           content = parts[0] + import_statement + "\nimport " + parts[1]
                       else:
                           content = import_statement + "\n" + content
-                      modified = True
+                  modified = True
 
               if modified:
                   with open(filepath, "w", encoding="utf-8") as f:
                       f.write(content)
-                  print(f"OK: Processado e corrigido -> {filepath}")
+                  print(f"OK: Ajustado -> {filepath}")
           EOF
 
       - name: Aplicar correções automáticas de código legado
