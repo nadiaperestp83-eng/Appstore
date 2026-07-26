@@ -125,11 +125,15 @@ List<StoreApp> _parseIndexV2(_ParseArgs args) {
 
       final name = _localized(metadata['name']) ?? packageName;
       final summary = _localized(metadata['summary']) ?? '';
-      final description = _localized(metadata['description']) ??
+      final rawDescription = _localized(metadata['description']) ??
           (summary.isEmpty ? 'Sem descrição.' : summary);
+      final description = _stripHtml(rawDescription);
       final iconRel = _localizedIcon(metadata['icon']);
       final iconUrl = iconRel != null ? '${args.repoBaseUrl}$iconRel' : '';
       final versionName = manifest?['versionName'] as String? ?? 'desconhecida';
+      final categories = ((metadata['categories'] as List<dynamic>?) ?? [])
+          .whereType<String>()
+          .toList();
 
       apps.add(StoreApp(
         id: packageName,
@@ -142,6 +146,7 @@ List<StoreApp> _parseIndexV2(_ParseArgs args) {
         source: 'fdroid',
         packageName: packageName,
         repoLabel: args.repoLabel,
+        categories: categories,
       ));
     } catch (_) {
       // Pacote malformado é ignorado; o parsing dos demais continua.
@@ -159,6 +164,20 @@ String? _localized(dynamic field) {
     if (field.isNotEmpty) return field.values.first as String?;
   }
   return null;
+}
+
+/// Remove tags HTML (ex: <p>, <ul>, <li>) que aparecem cruas em algumas
+/// descrições do F-Droid, deixando só o texto legível.
+String _stripHtml(String input) {
+  final withoutTags = input.replaceAll(RegExp(r'<[^>]*>'), ' ');
+  final withSpaces = withoutTags
+      .replaceAll('&nbsp;', ' ')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#39;', "'");
+  return withSpaces.replaceAll(RegExp(r'\s+'), ' ').trim();
 }
 
 String? _localizedIcon(dynamic field) {
