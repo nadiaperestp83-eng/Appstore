@@ -5,7 +5,6 @@ import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
-import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 
 class PSMoviesForYouComponent extends StatelessWidget {
   final PSGameModel data;
@@ -19,7 +18,7 @@ class PSMoviesForYouComponent extends StatelessWidget {
       width: 110,
       child: GestureDetector(
         onTap: () {
-          PSBookDetailsScreen(data: data, list: list).launch(context);
+          PSBooKDetailsScreen(data: data, list: list).launch(context);
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
