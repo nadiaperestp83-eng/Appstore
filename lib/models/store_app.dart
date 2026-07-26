@@ -9,6 +9,7 @@ class StoreApp {
   final String source; // 'github' ou 'fdroid'
   final String? packageName; // nome real do pacote Android, quando conhecido
   final String repoLabel; // nome amigável do repositório de origem (ex: "F-Droid oficial")
+  final List<String> categories; // categorias do F-Droid (vazio para GitHub)
 
   StoreApp({
     required this.id,
@@ -21,6 +22,7 @@ class StoreApp {
     required this.source,
     this.packageName,
     this.repoLabel = '',
+    this.categories = const [],
   });
 
   @override
