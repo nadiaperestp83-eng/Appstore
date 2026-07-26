@@ -3,7 +3,6 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
-import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 
 class PSMReleaseFragment extends StatefulWidget {
   static String tag = '/MnewReleases';
@@ -43,7 +42,7 @@ class PSMReleaseFragmentState extends State<PSMReleaseFragment> {
       itemBuilder: (context, index) {
         return InkWell(
           onTap: () {
-            PSBookDetailsScreen(data: releaseList![index]).launch(context);
+            PSBooKDetailsScreen(data: releaseList![index]).launch(context);
           },
           child: Column(
             children: [
