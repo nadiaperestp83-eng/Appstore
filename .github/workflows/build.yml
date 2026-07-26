@@ -15,7 +15,7 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Padronizar nome da classe de detalhes para 1 'K' (PSBookDetailsScreen)
+      - name: Padronizar referencias de PSBooKDetailsScreen para PSBookDetailsScreen
         run: |
           # Corrige o arquivo físico se estiver com dois K
           if [ -f "lib/screens/PSBooKDetailsScreen.dart" ]; then
@@ -23,7 +23,7 @@ jobs:
             echo "OK: Arquivo renomeado para PSBookDetailsScreen.dart"
           fi
 
-          # Garante que a classe interna dentro do arquivo seja PSBookDetailsScreen
+          # Garante que a classe interna dentro do arquivo seja PSBookDetailsScreen se o arquivo existir
           if [ -f "lib/screens/PSBookDetailsScreen.dart" ]; then
             sed -i 's/class PSBooKDetailsScreen/class PSBookDetailsScreen/g' lib/screens/PSBookDetailsScreen.dart
             echo "OK: Classe interna corrigida para PSBookDetailsScreen"
