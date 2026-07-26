@@ -15,53 +15,41 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Padronizar nomes e imports de PSBookScreen
+      - name: Criar e Padronizar Tela PSBookScreen e Imports
         run: |
           python3 - << 'EOF'
           import os
           import glob
           import re
 
-          # 1. Renomeia o arquivo físico se estiver com dois K para o nome correto da classe
-          bad_paths = glob.glob("lib/**/PSBoo*KDetailsScreen.dart", recursive=True) + glob.glob("lib/**/PSBoo*kDetailsScreen.dart", recursive=True)
           target_file = "lib/screens/PSBookScreen.dart"
-          
-          for bp in bad_paths:
-              if os.path.exists(bp) and bp != target_file:
-                  if os.path.exists(target_file):
-                      os.remove(bp)
-                  else:
-                      os.rename(bp, target_file)
-                  print(f"OK: Arquivo unificado para {target_file}")
+          os.makedirs("lib/screens", exist_ok=True)
 
-          # 2. Varre todos os arquivos .dart para corrigir referências de PSBookDetailsScreen -> PSBookScreen
+          # Varre todos os arquivos .dart para garantir que o import esteja correto
           for filepath in glob.glob("lib/**/*.dart", recursive=True):
               with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                   content = f.read()
 
               modified = False
 
-              # Substitui qualquer chamada antiga da classe errada pela classe correta (PSBookScreen)
               if re.search(r'PSBoo+K?DetailsScreen', content):
                   content = re.sub(r'PSBoo+K?DetailsScreen', 'PSBookScreen', content)
                   modified = True
 
-              # Gerencia o import correto da tela de detalhes de livros
               if "PSBookScreen" in content and filepath != target_file:
                   import_statement = "import 'package:playstore_flutter/screens/PSBookScreen.dart';"
                   
-                  # Remove imports antigos errados
                   lines = content.splitlines()
                   new_lines = [l for l in lines if "DetailsScreen.dart" not in l and "PSBookScreen.dart" not in l]
                   content = "\n".join(new_lines)
 
                   if import_statement not in content:
                       if "import " in content:
-                          parts = content.split("import ", 1)
-                          content = parts[0] + import_statement + "\nimport " + parts[1]
+                        parts = content.split("import ", 1)
+                        content = parts[0] + import_statement + "\nimport " + parts[1]
                       else:
-                          content = import_statement + "\n" + content
-                  modified = True
+                        content = import_statement + "\n" + content
+                      modified = True
 
               if modified:
                   with open(filepath, "w", encoding="utf-8") as f:
@@ -121,6 +109,11 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+
+      - name: Aumentar memória RAM do Gradle (Evitar Java Heap Space)
+        run: |
+          mkdir -p android
+          echo "org.gradle.jvmargs=-Xmx4g -XX:+HeapDumpOnOutOfMemoryError" >> android/gradle.properties
 
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
