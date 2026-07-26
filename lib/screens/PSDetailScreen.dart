@@ -102,7 +102,7 @@ class PSDetailScreenState extends State<PSDetailScreen> {
           PopupMenuButton(
             onSelected: (dynamic value) {
               if (value == 1) {
-                SharePlus.instance.share(ShareParams(text: "abc"));
+                Share.share("abc");
               } else if (value == 2) {
                 PSFlagPropertiesScreen(data7: widget.data).launch(context);
               }
