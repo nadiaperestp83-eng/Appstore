@@ -1,5 +1,15 @@
 import 'package:flutter/material.dart';
 
+/// Uma fonte disponível para um app (usado no seletor "Disponível em N fontes").
+class PSAppSourceOption {
+  final String repoLabel;
+  final String version;
+  final String downloadUrl;
+  final String source; // 'github' ou 'fdroid'
+
+  PSAppSourceOption({required this.repoLabel, required this.version, required this.downloadUrl, required this.source});
+}
+
 class PSGameModel {
   String? imgMain;
   String? imgLogo;
@@ -19,7 +29,7 @@ class PSGameModel {
   String? downloadUrl; // link direto do .apk da fonte preferida, sem zip
   String? version; // versão da fonte preferida
   String? preferredRepoLabel; // nome da fonte escolhida como padrão
-  List<String>? availableSourceLabels; // nomes de todas as fontes disponíveis (para o seletor "Disponível em N fontes")
+  List<PSAppSourceOption>? availableSourceOptions; // todas as fontes, com downloadUrl de cada uma
 
   PSGameModel({
     this.imagesData,
@@ -38,11 +48,11 @@ class PSGameModel {
     this.downloadUrl,
     this.version,
     this.preferredRepoLabel,
-    this.availableSourceLabels,
+    this.availableSourceOptions,
   });
 
   bool get isRealApp => packageName != null;
-  bool get hasMultipleSources => (availableSourceLabels?.length ?? 0) > 1;
+  bool get hasMultipleSources => (availableSourceOptions?.length ?? 0) > 1;
 }
 
 class PSMyAppsModel {
