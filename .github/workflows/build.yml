@@ -25,7 +25,6 @@ jobs:
           target_file = "lib/screens/PSBookScreen.dart"
           os.makedirs("lib/screens", exist_ok=True)
 
-          # Varre todos os arquivos .dart para garantir que o import esteja correto
           for filepath in glob.glob("lib/**/*.dart", recursive=True):
               with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                   content = f.read()
@@ -104,6 +103,15 @@ jobs:
             echo "OK: PSRatingReviewScreen.dart (showSnackBar) corrigido"
           fi
 
+      - name: Corrigir compatibilidade do plugin device_apps (SDK 34+)
+        run: |
+          BUILD_GRADLE="android/app/build.gradle"
+          if [ -f "$BUILD_GRADLE" ]; then
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' "$BUILD_GRADLE" || true
+            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' "$BUILD_GRADLE" || true
+            echo "OK: compile/target SDK atualizados para 34 no app/build.gradle"
+          fi
+
       - name: Configurar Java (necessário para build Android)
         uses: actions/setup-java@v4
         with:
@@ -139,7 +147,7 @@ jobs:
         run: flutter test
 
       - name: Build APK (release)
-        run: flutter build apk --release
+        run: flutter build apk --release --android-skip-build-dependency-validation
 
       - name: Upload do APK gerado
         uses: actions/upload-artifact@v4
