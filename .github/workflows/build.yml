@@ -33,13 +33,17 @@ jobs:
           find lib/ -type f -name "*.dart" -exec sed -i 's/PSBooKDetailsScreen/PSBookDetailsScreen/g' {} +
           echo "OK: Todas as referências ajustadas para PSBookDetailsScreen"
 
-          # Garante que todos os arquivos dentro de lib/components/ que usam PSBookDetailsScreen tenham o import correto
-          for f in lib/components/*.dart; do
-            if [ -f "$f" ] && grep -q "PSBookDetailsScreen" "$f"; then
-              if ! grep -q "PSBookDetailsScreen.dart" "$f"; then
-                sed -i "1i import 'package:playstore_flutter/screens/PSBookDetailsScreen.dart';" "$f"
-                echo "OK: Import adicionado em $f"
-              fi
+          # Injeta o import em todos os arquivos de components/ e screens/ que usam PSBookDetailsScreen
+          for folder in lib/components lib/screens; do
+            if [ -d "$folder" ]; then
+              for f in "$folder"/*.dart; do
+                if [ -f "$f" ] && grep -q "PSBookDetailsScreen" "$f"; then
+                  if ! grep -q "PSBookDetailsScreen.dart" "$f"; then
+                    sed -i "1i import 'package:playstore_flutter/screens/PSBookDetailsScreen.dart';" "$f"
+                    echo "OK: Import adicionado em $f"
+                  fi
+                fi
+              done
             fi
           done
 
