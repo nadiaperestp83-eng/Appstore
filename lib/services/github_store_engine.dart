@@ -26,7 +26,6 @@ class GithubStoreEngine {
         try {
           return await _fetchRepoApps(r);
         } catch (e) {
-          // Loga e segue com lista vazia para não quebrar a agregação
           // ignore: avoid_print
           print('[GithubStoreEngine] Falha em "$r": $e');
           return <StoreApp>[];
@@ -39,7 +38,8 @@ class GithubStoreEngine {
   Future<List<StoreApp>> _fetchRepoApps(String ownerRepo) async {
     final parts = ownerRepo.split('/');
     if (parts.length != 2 || parts[0].isEmpty || parts[1].isEmpty) {
-      throw GithubStoreException('Formato inválido de repositório: "$ownerRepo". Use "owner/repo".');
+      throw GithubStoreException(
+          'Formato inválido de repositório: "$ownerRepo". Use "owner/repo".');
     }
     final owner = parts[0];
     final repo = parts[1];
@@ -54,18 +54,20 @@ class GithubStoreEngine {
 
     final apps = _mapReleaseToApps(latestRelease, ownerRepo, repo);
 
-    // Ícone: releases não trazem ícone, então usamos o avatar do dono do repo
+    // Releases não trazem ícone: usamos o avatar do dono do repositório.
     if (apps.isNotEmpty) {
       final iconUrl = await _fetchOwnerAvatar(owner, repo, ownerRepo);
-      return apps.map((a) => StoreApp(
-        id: a.id,
-        title: a.title,
-        version: a.version,
-        iconUrl: iconUrl,
-        downloadUrl: a.downloadUrl,
-        description: a.description,
-        source: a.source,
-      )).toList();
+      return apps
+          .map((a) => StoreApp(
+                id: a.id,
+                title: a.title,
+                version: a.version,
+                iconUrl: iconUrl,
+                downloadUrl: a.downloadUrl,
+                description: a.description,
+                source: a.source,
+              ))
+          .toList();
     }
     return apps;
   }
@@ -73,8 +75,8 @@ class GithubStoreEngine {
   Future<String> _fetchOwnerAvatar(String owner, String repo, String ownerRepo) async {
     try {
       final repoInfo = await _getJson('$_baseUrl/$owner/$repo', ownerRepo);
-      final owner_ = repoInfo is Map ? repoInfo['owner'] : null;
-      return (owner_ is Map ? owner_['avatar_url'] as String? : null) ?? '';
+      final ownerData = repoInfo is Map ? repoInfo['owner'] : null;
+      return (ownerData is Map ? ownerData['avatar_url'] as String? : null) ?? '';
     } catch (_) {
       return '';
     }
@@ -111,7 +113,8 @@ class GithubStoreEngine {
     }
   }
 
-  List<StoreApp> _mapReleaseToApps(Map<String, dynamic> release, String ownerRepo, String repo) {
+  List<StoreApp> _mapReleaseToApps(
+      Map<String, dynamic> release, String ownerRepo, String repo) {
     final assets = (release['assets'] as List<dynamic>?) ?? [];
     final apkAssets = assets.where((a) {
       final name = (a is Map ? a['name'] as String? : null) ?? '';
@@ -120,9 +123,8 @@ class GithubStoreEngine {
 
     if (apkAssets.isEmpty) return [];
 
-    final version = (release['tag_name'] as String?) ??
-        (release['name'] as String?) ??
-        'desconhecida';
+    final version =
+        (release['tag_name'] as String?) ?? (release['name'] as String?) ?? 'desconhecida';
     final description = ((release['body'] as String?) ?? '').trim();
 
     return apkAssets.map((asset) {
@@ -137,6 +139,8 @@ class GithubStoreEngine {
         downloadUrl: downloadUrl, // link direto do .apk, sem zip
         description: description.isEmpty ? 'Sem descrição.' : description,
         source: 'github',
+        packageName: null, // desconhecido até o .apk ser baixado e o manifest lido
+        repoLabel: 'GitHub: $ownerRepo',
       );
     }).toList();
   }
