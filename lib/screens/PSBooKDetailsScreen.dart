@@ -13,7 +13,7 @@ import 'package:playstore_flutter/utils/AppColors.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PSBookDetailsScreen extends StatefulWidget {
   static String tag = '/PSBookDetalisScreen';
@@ -59,7 +59,7 @@ class PSBookDetailsScreenState extends State<PSBookDetailsScreen> {
           PopupMenuButton(
             onSelected: (dynamic value) {
               if (value == 1) {
-                Share.share("abc");
+                SharePlus.instance.share(ShareParams(text: "abc"));
               }
             },
             icon: Icon(Icons.more_vert_rounded),
