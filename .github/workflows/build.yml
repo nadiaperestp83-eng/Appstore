@@ -36,11 +36,13 @@ jobs:
           # Remove qualquer import antigo incorreto da tela de detalhes em todos os arquivos Dart
           find lib/ -type f -name "*.dart" -exec sed -i '/import.*PSBoo*KDetailsScreen\.dart.*/d' {} +
 
-          # Adiciona o import correto em todos os arquivos que utilizam a classe PSBookDetailsScreen (exceto no próprio arquivo dela)
+          # Adiciona o import correto usando o caminho completo por package em todos os arquivos que usam a classe
           for f in $(find lib/ -type f -name "*.dart"); do
             if [ "$f" != "lib/screens/PSBookDetailsScreen.dart" ] && grep -q "PSBookDetailsScreen" "$f"; then
-              sed -i "0,/import/s//import 'package:playstore_flutter\/screens\/PSBookDetailsScreen.dart';\nimport/" "$f"
-              echo "OK: Import injetado com sucesso em $f"
+              if ! grep -q "package:playstore_flutter/screens/PSBookDetailsScreen.dart" "$f"; then
+                sed -i "1i import 'package:playstore_flutter/screens/PSBookDetailsScreen.dart';" "$f"
+                echo "OK: Import injetado em $f"
+              fi
             fi
           done
 
