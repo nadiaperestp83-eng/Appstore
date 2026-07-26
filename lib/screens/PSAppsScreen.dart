@@ -25,10 +25,18 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
   TabController? _tabController;
   int tabIndex = 0;
 
+  // ===== Novo: apps reais (GitHub + F-Droid) via o motor =====
+  // Para adicionar repositórios do GitHub, preencha githubRepos abaixo,
+  // ex: ['Genymobile/scrcpy', 'termux/termux-app'].
+  late Future<List<PSGameModel>> _realAppsFuture;
+
   @override
   void initState() {
     super.initState();
     init();
+    _realAppsFuture = getRealAppsList(
+      githubRepos: const [],
+    );
   }
 
   init() async {
@@ -44,6 +52,48 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
   @override
   void setState(fn) {
     if (mounted) super.setState(fn);
+  }
+
+  Widget _realAppsSection() {
+    return FutureBuilder<List<PSGameModel>>(
+      future: _realAppsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 100,
+            alignment: Alignment.center,
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Container(
+            padding: EdgeInsets.all(16),
+            child: Text('Não foi possível carregar os apps reais agora.', style: secondaryTextStyle()),
+          );
+        }
+
+        final apps = snapshot.data ?? [];
+        if (apps.isEmpty) return SizedBox();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            16.height,
+            Text('Apps reais (GitHub / F-Droid)', style: boldTextStyle(size: 18)).paddingOnly(left: 16, right: 16),
+            8.height,
+            SingleChildScrollView(
+              padding: EdgeInsets.only(left: 8, right: 8),
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: apps.map((app) => PSAppsForYouComponent(app)).toList(),
+              ),
+            ),
+            16.height,
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -78,6 +128,7 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
                 ),
               ),
             ),
+            _realAppsSection(),
             forYouList(context, tabIndex, list, categoriesList),
           ],
         ),
