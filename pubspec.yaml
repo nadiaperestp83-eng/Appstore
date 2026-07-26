@@ -54,7 +54,7 @@ dev_dependencies:
 
 dependency_overrides:
   platform: ^3.1.5
-
+  flutter_plugin_android_lifecycle: ^2.0.17
   
   # Geração de código do MobX
   mobx_codegen: ^2.3.0
