@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/utils/PSConstants.dart';
 import 'package:playstore_flutter/utils/PSImages.dart';
+import 'package:playstore_flutter/services/github_store_engine.dart';
+import 'package:playstore_flutter/services/fdroid_store_engine.dart';
+import 'package:playstore_flutter/services/hub_app.dart';
+import 'package:playstore_flutter/services/hub_app_merge_engine.dart';
 
 List<PSGameModel> getDiscoverList() {
   List<PSGameModel> list = [];
@@ -236,4 +240,61 @@ List<GameModelList> getGameListGame3() {
   gameList3.add(GameModelList(img: PS_GameImg7));
   gameList3.add(GameModelList(img: PS_GameImg8));
   return gameList3;
+}
+
+// =========================================================================
+// FUNÇÃO NOVA: busca apps de verdade (GitHub + F-Droid) e converte para
+// PSGameModel, pronta pra usar em qualquer tela no lugar das funções
+// mockadas acima (getDiscoverList, getGameListGame, etc.).
+// =========================================================================
+
+/// Busca os apps reais nas fontes configuradas, agrupa por packageName
+/// (o "merge" do HubApp) e converte cada um para PSGameModel, já com a
+/// fonte preferida escolhida (maior versionCode, ou a ordem de
+/// [preferredRepoOrder] se informada).
+Future<List<PSGameModel>> getRealAppsList({
+  List<String> githubRepos = const [],
+  List<FDroidStoreEngine>? fdroidEngines,
+  List<String> preferredRepoOrder = const [],
+}) async {
+  final github = GithubStoreEngine();
+  final fdroid = fdroidEngines ?? [FDroidStoreEngine()];
+
+  final results = await Future.wait([
+    if (githubRepos.isNotEmpty)
+      github.fetchLatestApps(githubRepos).catchError((e) {
+        // ignore: avoid_print
+        print('[getRealAppsList] GitHub falhou: $e');
+        return [];
+      }),
+    ...fdroid.map((engine) => engine.fetchApps().catchError((e) {
+          // ignore: avoid_print
+          print('[getRealAppsList] F-Droid (${engine.repoLabel}) falhou: $e');
+          return [];
+        })),
+  ]);
+
+  final allApps = results.expand((r) => r).toList();
+
+  final mergeEngine = HubAppMergeEngine(preferredRepoOrder: preferredRepoOrder);
+  final hubApps = mergeEngine.merge(allApps.cast());
+
+  return hubApps.map(_hubAppToGameModel).toList();
+}
+
+PSGameModel _hubAppToGameModel(HubApp hubApp) {
+  final preferred = hubApp.preferredSource;
+  return PSGameModel(
+    title: hubApp.title,
+    subTitle: hubApp.description,
+    imgLogo: preferred.iconUrl,
+    imgMain: preferred.iconUrl,
+    appSize: 0,
+    rating: 0,
+    packageName: hubApp.packageName,
+    downloadUrl: preferred.downloadUrl,
+    version: preferred.version,
+    preferredRepoLabel: preferred.repoLabel,
+    availableSourceLabels: hubApp.availableSources.map((s) => s.repoLabel).toList(),
+  );
 }
