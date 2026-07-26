@@ -15,63 +15,46 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Padronizar e Injetar Imports via Python (Blindado Avançado)
+      - name: Padronizar nomes e imports de PSBookScreen
         run: |
           python3 - << 'EOF'
           import os
           import glob
           import re
 
-          # 1. Garante que o arquivo físico da tela de detalhes esteja correto
-          target_file = "lib/screens/PSBookDetailsScreen.dart"
-          bad_files = glob.glob("lib/**/PSBoo*KDetailsScreen.dart", recursive=True) + glob.glob("lib/**/PSBoo*kDetailsScreen.dart", recursive=True)
+          # 1. Renomeia o arquivo físico se estiver com dois K para o nome correto da classe
+          bad_paths = glob.glob("lib/**/PSBoo*KDetailsScreen.dart", recursive=True) + glob.glob("lib/**/PSBoo*kDetailsScreen.dart", recursive=True)
+          target_file = "lib/screens/PSBookScreen.dart"
           
-          for bf in bad_files:
-              if bf != target_file:
+          for bp in bad_paths:
+              if os.path.exists(bp) and bp != target_file:
                   if os.path.exists(target_file):
-                      os.remove(bf) # Remove duplicados errados
+                      os.remove(bp)
                   else:
-                      os.rename(bf, target_file)
+                      os.rename(bp, target_file)
                   print(f"OK: Arquivo unificado para {target_file}")
 
-          if os.path.exists(target_file):
-              with open(target_file, "r", encoding="utf-8", errors="ignore") as f:
-                  content = f.read()
-              
-              # Garante que a classe principal dentro do arquivo se chame exatamente PSBookDetailsScreen
-              content = re.sub(r'class\s+PSBoo+K?DetailsScreen\w*', 'class PSBookDetailsScreen', content)
-              
-              with open(target_file, "w", encoding="utf-8") as f:
-                  f.write(content)
-              print("OK: Classe interna da tela principal padronizada.")
-
-          # 2. Varre todos os arquivos .dart do projeto para corrigir referências e imports
+          # 2. Varre todos os arquivos .dart para corrigir referências de PSBookDetailsScreen -> PSBookScreen
           for filepath in glob.glob("lib/**/*.dart", recursive=True):
               with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                   content = f.read()
 
               modified = False
 
-              # Corrige qualquer citação com grafia errada (dois K ou maiúsculas erradas)
-              if re.search(r'PSBoo+K?DetailsScreen', content) and filepath != target_file:
-                  content = re.sub(r'PSBoo+K?DetailsScreen', 'PSBookDetailsScreen', content)
+              # Substitui qualquer chamada antiga da classe errada pela classe correta (PSBookScreen)
+              if re.search(r'PSBoo+K?DetailsScreen', content):
+                  content = re.sub(r'PSBoo+K?DetailsScreen', 'PSBookScreen', content)
                   modified = True
 
-              # Se o arquivo usa a classe (mas não é o próprio arquivo da tela)
-              if "PSBookDetailsScreen" in content and filepath != target_file:
-                  import_statement = "import 'package:playstore_flutter/screens/PSBookDetailsScreen.dart';"
+              # Gerencia o import correto da tela de detalhes de livros
+              if "PSBookScreen" in content and filepath != target_file:
+                  import_statement = "import 'package:playstore_flutter/screens/PSBookScreen.dart';"
                   
-                  # Remove todos os imports antigos relacionados a essa tela para evitar duplicidade
+                  # Remove imports antigos errados
                   lines = content.splitlines()
-                  new_lines = []
-                  for line in lines:
-                      if "DetailsScreen.dart" in line:
-                          continue
-                      new_lines.append(line)
-                  
+                  new_lines = [l for l in lines if "DetailsScreen.dart" not in l and "PSBookScreen.dart" not in l]
                   content = "\n".join(new_lines)
 
-                  # Insere o import correto logo após o primeiro 'import' encontrado ou no topo
                   if import_statement not in content:
                       if "import " in content:
                           parts = content.split("import ", 1)
