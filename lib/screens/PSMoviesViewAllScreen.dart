@@ -4,7 +4,6 @@ import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
-import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 
 class PSBookMoviesViewAllScreen extends StatefulWidget {
   static String tag = '/PSMoviesDetailsScreen';
@@ -61,7 +60,7 @@ class PSBookMoviesViewAllScreenState extends State<PSBookMoviesViewAllScreen> {
                   ],
                 ).onTap(() {
                   log(data);
-                  PSBookDetailsScreen(data: data).launch(context);
+                  PSBooKDetailsScreen(data: data).launch(context);
                 });
               },
             ).paddingOnly(left: 16, right: 16, top: 16),
