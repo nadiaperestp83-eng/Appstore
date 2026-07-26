@@ -14,7 +14,35 @@ class PSGameModel {
   bool? install;
   List<String>? imagesData;
 
-  PSGameModel({this.imagesData, this.imgMain, this.imgLogo, this.title, this.subTitle, this.rating, this.appSize, this.subTitle1, this.event, this.ends, this.icon, this.install});
+  // ===== Campos novos: dados reais vindos do motor (HubApp) =====
+  String? packageName; // chave real do app agrupado
+  String? downloadUrl; // link direto do .apk da fonte preferida, sem zip
+  String? version; // versão da fonte preferida
+  String? preferredRepoLabel; // nome da fonte escolhida como padrão
+  List<String>? availableSourceLabels; // nomes de todas as fontes disponíveis (para o seletor "Disponível em N fontes")
+
+  PSGameModel({
+    this.imagesData,
+    this.imgMain,
+    this.imgLogo,
+    this.title,
+    this.subTitle,
+    this.rating,
+    this.appSize,
+    this.subTitle1,
+    this.event,
+    this.ends,
+    this.icon,
+    this.install,
+    this.packageName,
+    this.downloadUrl,
+    this.version,
+    this.preferredRepoLabel,
+    this.availableSourceLabels,
+  });
+
+  bool get isRealApp => packageName != null;
+  bool get hasMultipleSources => (availableSourceLabels?.length ?? 0) > 1;
 }
 
 class PSMyAppsModel {
