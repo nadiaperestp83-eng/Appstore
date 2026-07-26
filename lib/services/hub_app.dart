@@ -11,6 +11,7 @@ class AppSourceOption {
   final String downloadUrl; // link direto do .apk, sem zip
   final String iconUrl;
   final String description;
+  final List<String> categories;
 
   AppSourceOption({
     required this.sourceId,
@@ -21,6 +22,7 @@ class AppSourceOption {
     required this.downloadUrl,
     required this.iconUrl,
     required this.description,
+    this.categories = const [],
   });
 
   factory AppSourceOption.fromStoreApp(StoreApp app) {
@@ -33,6 +35,7 @@ class AppSourceOption {
       downloadUrl: app.downloadUrl,
       iconUrl: app.iconUrl,
       description: app.description,
+      categories: app.categories,
     );
   }
 }
@@ -45,6 +48,7 @@ class HubApp {
   final String title;
   final String description;
   final List<AppSourceOption> availableSources;
+  final List<String> categories; // união das categorias de todas as fontes
 
   /// sourceId escolhido para exibir/baixar. Pode ser sobrescrito pelo
   /// usuário na tela de detalhes (ver seletor "Disponível em N fontes").
@@ -55,8 +59,10 @@ class HubApp {
     required this.title,
     required this.description,
     required this.availableSources,
+    List<String>? categories,
     String? preferredSourceId,
-  }) : preferredSourceId = preferredSourceId ?? _pickDefault(availableSources).sourceId;
+  })  : categories = categories ?? availableSources.expand((s) => s.categories).toSet().toList(),
+        preferredSourceId = preferredSourceId ?? _pickDefault(availableSources).sourceId;
 
   bool get hasMultipleSources => availableSources.length > 1;
 
