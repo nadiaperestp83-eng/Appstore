@@ -16,24 +16,25 @@ class FDroidStoreException implements Exception {
 class FDroidStoreEngine {
   final http.Client _client;
   final String repoBaseUrl;
+  final String repoLabel;
 
   FDroidStoreEngine({
     http.Client? client,
-    this.repoBaseUrl = 'https://f-droid.org/repo',
+    this.repoBaseUrl = 'https://f-droid.org/repo', // repositório oficial
+    this.repoLabel = 'F-Droid oficial',
   }) : _client = client ?? http.Client();
 
   String get _indexUrl => '$repoBaseUrl/index-v2.json';
 
   /// Baixa e processa o index-v2.json, retornando um StoreApp por pacote
-  /// com a versão mais recente disponível. [limit] opcionalmente restringe
-  /// a quantidade de apps retornados (útil para testes/paginação em memória).
+  /// com a versão mais recente disponível.
   Future<List<StoreApp>> fetchApps({int? limit}) async {
     final raw = await _downloadIndex();
 
     List<StoreApp> apps;
     try {
       // Parsing roda em isolate separado (compute) por ser um JSON pesado.
-      apps = await compute(_parseIndexV2, _ParseArgs(raw, repoBaseUrl));
+      apps = await compute(_parseIndexV2, _ParseArgs(raw, repoBaseUrl, repoLabel));
     } catch (e) {
       throw FDroidStoreException('Erro ao processar index-v2.json: $e');
     }
@@ -47,9 +48,7 @@ class FDroidStoreEngine {
   Future<String> _downloadIndex() async {
     late http.Response response;
     try {
-      response = await _client
-          .get(Uri.parse(_indexUrl))
-          .timeout(const Duration(seconds: 60));
+      response = await _client.get(Uri.parse(_indexUrl)).timeout(const Duration(seconds: 60));
     } on TimeoutException {
       throw FDroidStoreException('Timeout ao baixar $_indexUrl');
     } on http.ClientException catch (e) {
@@ -78,7 +77,8 @@ class FDroidStoreEngine {
 class _ParseArgs {
   final String rawJson;
   final String repoBaseUrl;
-  _ParseArgs(this.rawJson, this.repoBaseUrl);
+  final String repoLabel;
+  _ParseArgs(this.rawJson, this.repoBaseUrl, this.repoLabel);
 }
 
 /// Função top-level: obrigatória para rodar via `compute` em outro isolate.
@@ -102,7 +102,7 @@ List<StoreApp> _parseIndexV2(_ParseArgs args) {
       final versions = packageData['versions'] as Map<String, dynamic>?;
       if (metadata == null || versions == null || versions.isEmpty) return;
 
-      // Seleciona a versão mais recente pelo maior versionCode do manifest
+      // Seleciona a versão mais recente pelo maior versionCode do manifest.
       Map<String, dynamic>? best;
       int bestCode = -1;
       for (final v in versions.values) {
@@ -135,10 +135,13 @@ List<StoreApp> _parseIndexV2(_ParseArgs args) {
         id: packageName,
         title: name,
         version: versionName,
+        versionCode: bestCode,
         iconUrl: iconUrl,
         downloadUrl: downloadUrl,
         description: description,
         source: 'fdroid',
+        packageName: packageName,
+        repoLabel: args.repoLabel,
       ));
     } catch (_) {
       // Pacote malformado é ignorado; o parsing dos demais continua.
