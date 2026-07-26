@@ -3,7 +3,6 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
-import 'package:playstore_flutter/screens/PSBooKDetailsScreen.dart';
 
 class PSMTopSellingFragment extends StatefulWidget {
   static String tag = '/MTopSelling';
@@ -60,7 +59,7 @@ class PSMTopSellingFragmentState extends State<PSMTopSellingFragment> {
             ).paddingOnly(bottom: 8),
           ],
         ).onTap(() {
-          PSBookDetailsScreen(data: sellingList![index]).launch(context);
+          PSBooKDetailsScreen(data: sellingList![index]).launch(context);
         }).paddingOnly(left: 16, top: 16);
       },
     );
