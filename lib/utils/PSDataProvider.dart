@@ -252,7 +252,54 @@ List<GameModelList> getGameListGame3() {
 /// (o "merge" do HubApp) e converte cada um para PSGameModel, já com a
 /// fonte preferida escolhida (maior versionCode, ou a ordem de
 /// [preferredRepoOrder] se informada).
-Future<List<PSGameModel>> getRealAppsList({
+/// Busca os apps reais e distribui nas MESMAS seções que a UI já usa
+/// (Recommended for you, Educational apps, Music Players, Tools & utilities),
+/// como a Play Store faz: em lotes (padrão 20 por seção) para não sobrecarregar
+/// a tela. "Premium apps" fica de fora — F-Droid/GitHub são sempre gratuitos
+/// e de código aberto, não existe um equivalente real de app pago pra usar ali.
+Future<Map<String, List<PSGameModel>>> getRealAppsBySection({
+  List<String> githubRepos = const [],
+  List<FDroidStoreEngine>? fdroidEngines,
+  List<String> preferredRepoOrder = const [],
+  int perSectionLimit = 20,
+}) async {
+  final hubApps = await _fetchAndMergeHubApps(
+    githubRepos: githubRepos,
+    fdroidEngines: fdroidEngines,
+    preferredRepoOrder: preferredRepoOrder,
+  );
+
+  const musicKeywords = ['Multimedia', 'Audio', 'Music', 'Video'];
+  const educationKeywords = ['Reading', 'Science & Education', 'Education'];
+  const toolsKeywords = ['System', 'Internet', 'Development', 'Security', 'Connectivity', 'Navigation', 'Writing'];
+
+  final music = <HubApp>[];
+  final education = <HubApp>[];
+  final tools = <HubApp>[];
+  final recommended = <HubApp>[];
+
+  for (final hub in hubApps) {
+    final cats = hub.categories;
+    if (cats.any((c) => musicKeywords.contains(c)) && music.length < perSectionLimit) {
+      music.add(hub);
+    } else if (cats.any((c) => educationKeywords.contains(c)) && education.length < perSectionLimit) {
+      education.add(hub);
+    } else if (cats.any((c) => toolsKeywords.contains(c)) && tools.length < perSectionLimit) {
+      tools.add(hub);
+    } else if (recommended.length < perSectionLimit) {
+      recommended.add(hub);
+    }
+  }
+
+  return {
+    'Recommended for you': recommended.map(_hubAppToGameModel).toList(),
+    'Educational apps': education.map(_hubAppToGameModel).toList(),
+    'Music Players': music.map(_hubAppToGameModel).toList(),
+    'Tools & utilities': tools.map(_hubAppToGameModel).toList(),
+  };
+}
+
+Future<List<HubApp>> _fetchAndMergeHubApps({
   List<String> githubRepos = const [],
   List<FDroidStoreEngine>? fdroidEngines,
   List<String> preferredRepoOrder = const [],
@@ -264,21 +311,32 @@ Future<List<PSGameModel>> getRealAppsList({
     if (githubRepos.isNotEmpty)
       github.fetchLatestApps(githubRepos).catchError((e) {
         // ignore: avoid_print
-        print('[getRealAppsList] GitHub falhou: $e');
+        print('[getRealAppsBySection] GitHub falhou: $e');
         return [];
       }),
     ...fdroid.map((engine) => engine.fetchApps().catchError((e) {
           // ignore: avoid_print
-          print('[getRealAppsList] F-Droid (${engine.repoLabel}) falhou: $e');
+          print('[getRealAppsBySection] F-Droid (${engine.repoLabel}) falhou: $e');
           return [];
         })),
   ]);
 
   final allApps = results.expand((r) => r).toList();
-
   final mergeEngine = HubAppMergeEngine(preferredRepoOrder: preferredRepoOrder);
-  final hubApps = mergeEngine.merge(allApps.cast());
+  return mergeEngine.merge(allApps.cast());
+}
 
+/// Mantido para compatibilidade: busca tudo em uma lista só, sem separar por seção.
+Future<List<PSGameModel>> getRealAppsList({
+  List<String> githubRepos = const [],
+  List<FDroidStoreEngine>? fdroidEngines,
+  List<String> preferredRepoOrder = const [],
+}) async {
+  final hubApps = await _fetchAndMergeHubApps(
+    githubRepos: githubRepos,
+    fdroidEngines: fdroidEngines,
+    preferredRepoOrder: preferredRepoOrder,
+  );
   return hubApps.map(_hubAppToGameModel).toList();
 }
 
