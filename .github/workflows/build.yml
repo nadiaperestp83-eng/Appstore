@@ -15,6 +15,24 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      - name: Padronizar nome da classe de detalhes para 1 'K' (PSBookDetailsScreen)
+        run: |
+          # Corrige o arquivo físico se estiver com dois K
+          if [ -f "lib/screens/PSBooKDetailsScreen.dart" ]; then
+            mv lib/screens/PSBooKDetailsScreen.dart lib/screens/PSBookDetailsScreen.dart
+            echo "OK: Arquivo renomeado para PSBookDetailsScreen.dart"
+          fi
+
+          # Garante que a classe interna dentro do arquivo seja PSBookDetailsScreen
+          if [ -f "lib/screens/PSBookDetailsScreen.dart" ]; then
+            sed -i 's/class PSBooKDetailsScreen/class PSBookDetailsScreen/g' lib/screens/PSBookDetailsScreen.dart
+            echo "OK: Classe interna corrigida para PSBookDetailsScreen"
+          fi
+
+          # Substitui todas as chamadas em todo o projeto de PSBooKDetailsScreen para PSBookDetailsScreen
+          find lib/ -type f -name "*.dart" -exec sed -i 's/PSBooKDetailsScreen/PSBookDetailsScreen/g' {} +
+          echo "OK: Todas as referências ajustadas para PSBookDetailsScreen"
+
       - name: Aplicar correções automáticas de código legado
         run: |
           FILES_FLATBUTTON=(
