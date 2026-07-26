@@ -25,7 +25,7 @@ class AppThemeData {
       secondary: Colors.blue,
       error: Colors.red,
     ),
-    cardTheme: CardTheme(color: Colors.white),
+    cardTheme: CardThemeData(color: Colors.white),
     iconTheme: IconThemeData(color: textPrimaryColor),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: whiteColor),
     textTheme: TextTheme(
@@ -62,7 +62,7 @@ class AppThemeData {
       secondary: whiteColor,
       error: Color(0xFFCF6676),
     ),
-    cardTheme: CardTheme(color: cardBackgroundBlackDark),
+    cardTheme: CardThemeData(color: cardBackgroundBlackDark),
     iconTheme: IconThemeData(color: whiteColor),
     textTheme: TextTheme(
       labelLarge: TextStyle(color: color_primary_black),
