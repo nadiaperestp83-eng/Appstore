@@ -25,6 +25,7 @@ class ApkInstallerService {
   /// Verifica se o app já está instalado pelo packageName.
   Future<bool> isInstalled(String packageName) async {
     try {
+      // ✅ CORRIGIDO: DeviceApps (não FlutterDeviceApps)
       return await DeviceApps.isAppInstalled(packageName);
     } catch (e) {
       debugPrint('Erro ao verificar instalação: $e');
