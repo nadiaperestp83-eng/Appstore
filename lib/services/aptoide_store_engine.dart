@@ -59,6 +59,16 @@ class AptoideStoreEngine {
       final versionName = file?['vername'] as String? ?? 'desconhecida';
       final versionCode = (file?['vercode'] as num?)?.toInt() ?? 0;
 
+      final developerObj = data['developer'] as Map<String, dynamic>?;
+      final developer = developerObj?['name'] as String?;
+
+      final stats = data['stats'] as Map<String, dynamic>?;
+      final downloads = (stats?['downloads'] as num?)?.toInt() ?? 0;
+      final ratingObj = stats?['rating'] as Map<String, dynamic>?;
+      final ratingAvg = (ratingObj?['avg'] as num?)?.toDouble();
+
+      final sizeBytes = (data['size'] as num?)?.toInt() ?? (file?['filesize'] as num?)?.toInt() ?? 0;
+
       return StoreApp(
         id: packageName,
         title: name,
@@ -70,6 +80,10 @@ class AptoideStoreEngine {
         source: 'aptoide',
         packageName: packageName,
         repoLabel: repoLabel,
+        developer: developer,
+        downloads: downloads,
+        ratingAvg: ratingAvg,
+        sizeBytes: sizeBytes,
       );
     } catch (_) {
       // Item malformado é ignorado, o resto da lista segue normalmente.
