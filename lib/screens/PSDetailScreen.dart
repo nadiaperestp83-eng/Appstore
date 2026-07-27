@@ -16,6 +16,7 @@ import 'package:playstore_flutter/utils/AppColors.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
+import 'package:playstore_flutter/widgets/install_button.dart';
 import 'package:share_plus/share_plus.dart';
 
 class PSDetailScreen extends StatefulWidget {
@@ -30,7 +31,6 @@ class PSDetailScreen extends StatefulWidget {
 
 class PSDetailScreenState extends State<PSDetailScreen> {
   List<PSAppbarModel> list = appsList;
-  bool isInstall = false;
   bool visibleItem = false;
   bool iconSelect = false;
   var randomNumber = Random();
@@ -62,36 +62,6 @@ class PSDetailScreenState extends State<PSDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Widget installButton() {
-      return Container(
-        decoration: boxDecoration(bgColor: psColorGreen, radius: 8),
-        width: context.height(),
-        height: 35,
-        child: Center(child: Text('Install', style: primaryTextStyle(color: Colors.white))),
-      ).onTap(() {
-        isInstall = true;
-        setState(() {});
-      });
-    }
-
-    Widget unInstallButton() {
-      return Container(
-        height: 35,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(height: 50, decoration: boxDecoration(color: appDividerColor, radius: 4), padding: EdgeInsets.only(left: 16, right: 16), child: Text('Cancel', style: primaryTextStyle(color: psColorGreen)).center()).expand(flex: 4),
-            16.width,
-            Container(height: 50, decoration: boxDecoration(bgColor: appDividerColor, radius: 4), padding: EdgeInsets.only(left: 16, right: 16), child: Text('Open', style: primaryTextStyle()).center()).expand(flex: 4),
-          ],
-        ),
-      ).paddingOnly(left: 18, right: 18).onTap(() {
-        setState(() {
-          isInstall = false;
-        });
-      });
-    }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -204,7 +174,7 @@ class PSDetailScreenState extends State<PSDetailScreen> {
               ),
             ),
             32.height,
-            isInstall ? unInstallButton() : installButton().paddingOnly(left: 16, right: 16),
+            InstallButton(app: widget.data!, size: InstallButtonSize.large).paddingOnly(left: 16, right: 16),
             24.height,
             GestureDetector(
               onTap: () {
