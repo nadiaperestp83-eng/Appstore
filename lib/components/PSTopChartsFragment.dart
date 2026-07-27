@@ -4,6 +4,7 @@ import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSDetailScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
+import 'package:playstore_flutter/widgets/install_button.dart';
 
 /// Fragmento "Top charts" 100% orientado a dados reais.
 ///
@@ -114,27 +115,33 @@ class PSTopChartsFragmentState extends State<PSTopChartsFragment> {
                             16.height,
                             Row(
                               children: [
-                                8.width,
-                                commonCacheImageWidget(item.imgLogo, height: 50, width: 60, fit: BoxFit.cover).cornerRadiusWithClipRRect(10),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                Row(
                                   children: [
-                                    Text(item.title ?? '', style: boldTextStyle()).paddingOnly(left: 16),
-                                    if ((item.subTitle ?? '').isNotEmpty)
-                                      Text(item.subTitle!, style: secondaryTextStyle(), overflow: TextOverflow.ellipsis).paddingOnly(left: 16),
-                                    Row(
+                                    8.width,
+                                    commonCacheImageWidget(item.imgLogo, height: 50, width: 60, fit: BoxFit.cover).cornerRadiusWithClipRRect(10),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text((item.rating ?? 0).toStringAsFixed(1), style: secondaryTextStyle()).paddingOnly(left: 16),
-                                        Icon(Icons.star, size: 10),
-                                        if ((item.appSize ?? 0) > 0) Text('${item.appSize!.toStringAsFixed(1)}MB').paddingOnly(left: 16),
+                                        Text(item.title ?? '', style: boldTextStyle()).paddingOnly(left: 16),
+                                        if ((item.subTitle ?? '').isNotEmpty)
+                                          Text(item.subTitle!, style: secondaryTextStyle(), overflow: TextOverflow.ellipsis).paddingOnly(left: 16),
+                                        Row(
+                                          children: [
+                                            Text((item.rating ?? 0).toStringAsFixed(1), style: secondaryTextStyle()).paddingOnly(left: 16),
+                                            Icon(Icons.star, size: 10),
+                                            if ((item.appSize ?? 0) > 0) Text('${item.appSize!.toStringAsFixed(1)}MB').paddingOnly(left: 16),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ],
-                                ),
+                                ).onTap(() {
+                                  PSDetailScreen(data: item).launch(context);
+                                }).expand(),
+                                InstallButton(app: item, size: InstallButtonSize.small),
+                                8.width,
                               ],
-                            ).onTap(() {
-                              PSDetailScreen(data: item).launch(context);
-                            })
+                            ),
                           ],
                         ).paddingOnly(left: 16),
                       );
