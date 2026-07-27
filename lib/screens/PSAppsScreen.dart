@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/components/PSAppsForYouComponent.dart';
-import 'package:playstore_flutter/components/PSGEditorChoiceFragment.dart';
 import 'package:playstore_flutter/components/PSTopChartsFragment.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
@@ -10,42 +9,46 @@ import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
 import 'package:playstore_flutter/utils/PSWidgets.dart';
 
+/// Aba "Apps", 100% conectada ao motor do Aptoide.
+///
+/// O tab "Editor's Choice" saiu de vez (era mockado, sem equivalente real).
+/// A seção "Premium apps" já nem existia mais nas queries reais - ela só
+/// sobrevivia como fallback mockado enquanto a resposta do Aptoide não
+/// chegava. Esse fallback também saiu: agora, enquanto carrega, a tela
+/// mostra um indicador de progresso de verdade, nunca dado inventado.
 class PSAppsScreen extends StatefulWidget {
   static String tag = '/PSAppsScreen';
-  final List<PSAppbarModel> list = getGameList;
 
   @override
   PSAppsScreenState createState() => PSAppsScreenState();
 }
 
+const List<String> _appsTabNames = ['For you', 'Top Charts', 'Categories'];
+
 class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixin {
-  List<PSAppbarModel> list = appsList;
-  List<CategoriesApps> categoriesList = getCategoriesListApp();
+  final List<CategoriesApps> _categoriesList = getCategoriesListApp();
 
   TabController? _tabController;
   int tabIndex = 0;
 
-  // ===== Apps reais via Aptoide (busca por termo), distribuídos nas
-  // mesmas seções que a UI já usa (Recommended for you, Educational apps,
-  // Music Players, Tools & utilities), em lotes de até 20 por seção.
-  // F-Droid/GitHub saíram daqui e agora vivem na aba "Apps livres". =====
-  late Future<Map<String, List<PSGameModel>>> _realSectionsFuture;
+  // Buscadas uma única vez em initState: trocar de tab não deve refazer a
+  // requisição de rede (isso é o que causava a sensação de "recarregar do
+  // zero" e o "flash" de dado mockado antes do real aparecer).
+  late final Future<Map<String, List<PSGameModel>>> _forYouFuture;
+  late final Future<Map<String, List<PSGameModel>>> _topChartsFuture;
 
   @override
   void initState() {
     super.initState();
-    init();
-    _realSectionsFuture = getAptoideAppsBySection(perSectionLimit: 20);
-  }
-
-  init() async {
-    _tabController = TabController(vsync: this, initialIndex: tabIndex, length: appsList.length);
+    _tabController = TabController(vsync: this, initialIndex: tabIndex, length: _appsTabNames.length);
+    _forYouFuture = getAptoideAppsBySection(perSectionLimit: 20);
+    _topChartsFuture = getAptoideAppsCategorySections(appsTopChartsSectionNames, perSectionLimit: 20);
   }
 
   @override
   void dispose() {
-    super.dispose();
     _tabController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -75,9 +78,7 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
                   indicatorSize: TabBarIndicatorSize.label,
                   labelStyle: boldTextStyle(size: 12),
                   isScrollable: true,
-                  tabs: appsList.map((e) {
-                    return Tab(text: e.name.validate());
-                  }).toList(),
+                  tabs: _appsTabNames.map((name) => Tab(text: name)).toList(),
                   onTap: (i) {
                     tabIndex = i;
                     setState(() {});
@@ -85,75 +86,109 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
                 ),
               ),
             ),
-            FutureBuilder<Map<String, List<PSGameModel>>>(
-              future: _realSectionsFuture,
-              builder: (context, snapshot) {
-                final realSections = snapshot.data ?? {};
-                return forYouList(context, tabIndex, list, categoriesList, realSections);
-              },
-            ),
+            _buildTabContent(context),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildTabContent(BuildContext context) {
+    switch (tabIndex) {
+      case 0:
+        return _ForYouSections(future: _forYouFuture, sectionOrder: gamesAppsForYouSectionOrder).paddingBottom(16);
+      case 1:
+        return PSTopChartsFragment(sectionsFuture: _topChartsFuture, sectionOrder: appsTopChartsSectionNames).paddingBottom(16);
+      case 2:
+        return CategoriesList(data: _categoriesList);
+      default:
+        return SizedBox();
+    }
+  }
 }
 
-Widget forYouList(
-  BuildContext context,
-  int tabIndex,
-  List<PSAppbarModel> list,
-  List<CategoriesApps> categoriesList,
-  Map<String, List<PSGameModel>> realSections,
-) {
-  if (tabIndex == 0) {
-    return Column(
-      children: list[tabIndex].categories!.map((e) {
-        // Se existir dado real pra essa categoria (mesmo nome da seção),
-        // usa ele no lugar da lista mockada. "Premium apps" fica sempre
-        // mockado: não existe um equivalente real de app pago no F-Droid/GitHub.
-        final realList = realSections[e.name];
-        final itemsToShow = (realList != null && realList.isNotEmpty) ? realList : e.list;
+/// Ordem de exibição das seções reais de [getAptoideAppsBySection].
+const List<String> gamesAppsForYouSectionOrder = [
+  'Recommended for you',
+  'Educational apps',
+  'Music Players',
+  'Tools & utilities',
+];
 
-        return Container(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              16.height,
-              InkWell(
-                onTap: () {
-                  PSGameViewAllScreen(data: e).launch(context);
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(e.name!, style: boldTextStyle(size: 18)),
-                    Icon(Icons.arrow_forward_rounded),
-                  ],
-                ).paddingOnly(left: 16, right: 16),
-              ),
-              8.height,
-              SingleChildScrollView(
-                padding: EdgeInsets.only(left: 8, right: 8),
-                child: Row(
-                  children: (itemsToShow ?? []).map((e) {
-                    return PSAppsForYouComponent(e);
-                  }).toList(),
+/// Carrosséis "For you" da aba Apps - mesmo comportamento honesto de
+/// loading/erro/vazio usado na aba Games: nunca mostra dado inventado
+/// enquanto espera a resposta real do Aptoide.
+class _ForYouSections extends StatelessWidget {
+  final Future<Map<String, List<PSGameModel>>> future;
+  final List<String> sectionOrder;
+
+  const _ForYouSections({required this.future, required this.sectionOrder});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, List<PSGameModel>>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            padding: EdgeInsets.symmetric(vertical: 48),
+            alignment: Alignment.center,
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Container(
+            padding: EdgeInsets.symmetric(vertical: 48, horizontal: 16),
+            alignment: Alignment.center,
+            child: Text('Não foi possível carregar os apps agora.', style: secondaryTextStyle()),
+          );
+        }
+
+        final sections = snapshot.data ?? {};
+        final nonEmptySections = sectionOrder.where((name) => (sections[name] ?? []).isNotEmpty).toList();
+
+        if (nonEmptySections.isEmpty) {
+          return Container(
+            padding: EdgeInsets.symmetric(vertical: 48, horizontal: 16),
+            alignment: Alignment.center,
+            child: Text('Nenhum app encontrado.', style: secondaryTextStyle()),
+          );
+        }
+
+        return Column(
+          children: nonEmptySections.map((name) {
+            final list = sections[name]!;
+            final sectionModel = PSAppbarModel(name: name, list: list);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                16.height,
+                InkWell(
+                  onTap: () {
+                    PSGameViewAllScreen(data: sectionModel).launch(context);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(name, style: boldTextStyle(size: 18)),
+                      Icon(Icons.arrow_forward_rounded),
+                    ],
+                  ).paddingOnly(left: 16, right: 16),
                 ),
-                scrollDirection: Axis.horizontal,
-              ),
-            ],
-          ),
+                8.height,
+                SingleChildScrollView(
+                  padding: EdgeInsets.only(left: 8, right: 8),
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: list.map((e) => PSAppsForYouComponent(e)).toList(),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
         );
-      }).toList(),
-    ).paddingBottom(16);
-  } else if (tabIndex == 1) {
-    return PSTopChartsFragment(tabIndex).paddingBottom(16);
-  } else if (tabIndex == 2) {
-    return CategoriesList(data: categoriesList);
-  } else if (tabIndex == 3) {
-    return PSGEditorChoiceFragment(tabIndex);
-  } else {
-    return SizedBox();
+      },
+    );
   }
 }
