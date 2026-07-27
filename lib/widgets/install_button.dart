@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
@@ -131,7 +132,7 @@ class _InstallButtonState extends State<InstallButton> {
       case _InstallStatus.checking:
         return _largeShell(
           color: appDividerColor,
-          child: SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+          child: const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)),
         );
       case _InstallStatus.unavailable:
         return _largeShell(
@@ -181,9 +182,9 @@ class _InstallButtonState extends State<InstallButton> {
   Widget _buildSmall(BuildContext context) {
     switch (_status) {
       case _InstallStatus.checking:
-        return SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2));
+        return const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2));
       case _InstallStatus.unavailable:
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
       case _InstallStatus.installing:
         return _smallShell(
           color: Colors.transparent,
@@ -221,7 +222,7 @@ class _InstallButtonState extends State<InstallButton> {
   Widget _smallShell({required Color? color, required Color? borderColor, required Widget child, VoidCallback? onTap}) {
     return Container(
       height: 26,
-      padding: EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(14),
