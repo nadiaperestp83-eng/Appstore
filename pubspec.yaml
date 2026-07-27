@@ -30,6 +30,7 @@ dependencies:
   uuid: ^4.3.3
   flutter_mobx: ^2.2.0
   mobx: ^2.3.0
+  dio: ^5.7.0
 
   # =========================================================
   # Minhas adições (loja descentralizada GitHub + F-Droid)
