@@ -24,6 +24,7 @@ class ApkInstallerService {
 
   Future<bool> isInstalled(String packageName) async {
     try {
+      // ⚠️⚠️⚠️ LINHA 27 - AQUI É DeviceApps SEM "Flutter" NA FRENTE ⚠️⚠️⚠️
       return await DeviceApps.isAppInstalled(packageName);
     } catch (e) {
       debugPrint('Erro ao verificar instalação: $e');
