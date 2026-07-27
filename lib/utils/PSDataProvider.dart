@@ -5,6 +5,7 @@ import 'package:playstore_flutter/utils/PSImages.dart';
 import 'package:playstore_flutter/services/github_store_engine.dart';
 import 'package:playstore_flutter/services/fdroid_store_engine.dart';
 import 'package:playstore_flutter/services/aptoide_store_engine.dart';
+import 'package:playstore_flutter/models/store_app.dart';
 import 'package:playstore_flutter/services/hub_app.dart';
 import 'package:playstore_flutter/services/hub_app_merge_engine.dart';
 
