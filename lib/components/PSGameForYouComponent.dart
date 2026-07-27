@@ -31,24 +31,26 @@ class PSGameForYouComponent extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(data.title!, style: primaryTextStyle(size: 14)),
+                      Text(data.title ?? '', style: primaryTextStyle(size: 14)),
                       Row(
                         children: [
-                          Text(data.subTitle!, style: primaryTextStyle(size: 12), overflow: TextOverflow.ellipsis),
-                          16.width,
-                          Text(data.subTitle1!, style: primaryTextStyle(size: 12), overflow: TextOverflow.ellipsis),
+                          if ((data.subTitle ?? '').isNotEmpty)
+                            Text(data.subTitle!, style: primaryTextStyle(size: 12), overflow: TextOverflow.ellipsis),
+                          if ((data.subTitle ?? '').isNotEmpty && (data.subTitle1 ?? '').isNotEmpty) 16.width,
+                          if ((data.subTitle1 ?? '').isNotEmpty)
+                            Text(data.subTitle1!, style: primaryTextStyle(size: 12), overflow: TextOverflow.ellipsis),
                         ],
                       ),
                       Row(
                         children: [
                           Row(
                             children: [
-                              Text(data.rating.toString(), style: primaryTextStyle(size: 12)),
+                              Text((data.rating ?? 0).toStringAsFixed(1), style: primaryTextStyle(size: 12)),
                               Icon(Icons.star, size: 12),
                             ],
                           ),
                           8.width,
-                          Text(data.appSize.toString(), style: primaryTextStyle(size: 12)),
+                          Text('${(data.appSize ?? 0).toStringAsFixed(1)}MB', style: primaryTextStyle(size: 12)),
                         ],
                       )
                     ],
