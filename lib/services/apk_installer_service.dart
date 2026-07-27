@@ -1,125 +1,141 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:device_apps/device_apps.dart';
-import 'package:flutter/material.dart';
-import 'package:open_file/open_file.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:playstore_flutter/models/store_app.dart';
+import 'package:device_apps/device_apps.dart';
+import '../models/store_app.dart';
 
 class ApkInstallerException implements Exception {
   final String message;
   ApkInstallerException(this.message);
-
   @override
   String toString() => 'ApkInstallerException: $message';
 }
 
+/// Baixa um .apk e aciona o instalador nativo do Android.
+/// Se o app já estiver instalado (checagem por package name, disponível
+/// para apps de origem 'fdroid'), abre o app em vez de reinstalar.
 class ApkInstallerService {
-  static final ApkInstallerService _instance = ApkInstallerService._internal();
-  factory ApkInstallerService() => _instance;
-  ApkInstallerService._internal();
+  final http.Client _client;
+  ApkInstallerService({http.Client? client}) : _client = client ?? http.Client();
 
-  final Dio _dio = Dio();
-
+  /// Verifica se o pacote já está instalado no dispositivo.
+  /// Só funciona de forma confiável para apps 'fdroid', cujo StoreApp.id
+  /// é o package name real. Para 'github', o package name não é conhecido
+  /// antecipadamente (só existe dentro do .apk).
   Future<bool> isInstalled(String packageName) async {
+    if (!Platform.isAndroid) return false;
     try {
       return await DeviceApps.isAppInstalled(packageName);
-    } catch (e) {
-      debugPrint('Erro ao verificar instalação: $e');
+    } catch (_) {
       return false;
     }
   }
 
+  /// Fluxo principal: se o app já está instalado, abre-o.
+  /// Caso contrário, baixa o .apk e aciona o instalador do sistema.
+  ///
+  /// A checagem de "já instalado" só é confiável quando o package name é
+  /// conhecido de antemão (Aptoide e F-Droid sempre sabem; GitHub só sabe
+  /// depois de baixar o .apk e ler o manifest, então fica de fora daqui).
   Future<void> installOrOpen(
     StoreApp app, {
     void Function(double progress)? onProgress,
   }) async {
     final knownPackageName = app.packageName;
-
     if (knownPackageName != null && knownPackageName.isNotEmpty) {
       final already = await isInstalled(knownPackageName);
       if (already) {
         final opened = await DeviceApps.openApp(knownPackageName);
-        if (opened) return;
+        if (opened != true) {
+          throw ApkInstallerException('Não foi possível abrir "${app.title}" ($knownPackageName).');
+        }
+        return;
       }
     }
 
-    final safeId = app.id.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
-    final version = app.version.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
-    final fileName = '${safeId}_$version.apk';
-
-    await downloadAndInstall(
-      app.downloadUrl,
-      fileName: fileName,
-      onProgress: onProgress,
-    );
+    final fileName = '${app.id.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_')}_${app.version}.apk';
+    await downloadAndInstall(app.downloadUrl, fileName: fileName, onProgress: onProgress);
   }
 
+  /// Baixa o .apk de [downloadUrl] e abre o instalador nativo do Android.
   Future<void> downloadAndInstall(
     String downloadUrl, {
     required String fileName,
     void Function(double progress)? onProgress,
   }) async {
+    if (!downloadUrl.toLowerCase().endsWith('.apk')) {
+      throw ApkInstallerException('URL não aponta para um .apk direto: $downloadUrl');
+    }
+
     final granted = await _ensureInstallPermission();
     if (!granted) {
       throw ApkInstallerException(
-        'Permissão para instalar aplicativos desconhecidos foi negada.',
+        'Permissão "Instalar apps desconhecidos" não concedida pelo usuário.',
       );
     }
 
     final file = await _download(downloadUrl, fileName, onProgress);
-
-    final result = await OpenFile.open(
-      file.path,
-      type: 'application/vnd.android.package-archive',
-    );
+    final result = await OpenFile.open(file.path);
 
     if (result.type != ResultType.done) {
       throw ApkInstallerException(
-        'Não foi possível iniciar a instalação: ${result.message}',
+        'Falha ao abrir o instalador: ${result.message} (${result.type})',
       );
     }
   }
 
   Future<bool> _ensureInstallPermission() async {
-    if (!Platform.isAndroid) return false;
-
+    if (!Platform.isAndroid) return true;
     final status = await Permission.requestInstallPackages.status;
     if (status.isGranted) return true;
-
-    final requested = await Permission.requestInstallPackages.request();
-    return requested.isGranted;
+    final result = await Permission.requestInstallPackages.request();
+    return result.isGranted;
   }
 
   Future<File> _download(
     String url,
     String fileName,
     void Function(double progress)? onProgress,
-  }) async {
+  ) async {
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/$fileName');
+
+    http.StreamedResponse response;
     try {
-      final tempDir = await getTemporaryDirectory();
-      final savePath = '${tempDir.path}/$fileName';
-
-      await _dio.download(
-        url,
-        savePath,
-        onReceiveProgress: (received, total) {
-          if (total > 0 && onProgress != null) {
-            onProgress(received / total);
-          }
-        },
-        options: Options(
-          followRedirects: true,
-          validateStatus: (status) => status != null && status < 500,
-        ),
-      );
-
-      return File(savePath);
-    } on DioException catch (e) {
-      throw ApkInstallerException('Falha no download: ${e.message}');
+      final request = http.Request('GET', Uri.parse(url));
+      response = await _client.send(request).timeout(const Duration(seconds: 30));
     } catch (e) {
-      throw ApkInstallerException('Erro inesperado no download: $e');
+      throw ApkInstallerException('Erro de rede ao baixar APK: $e');
     }
+
+    if (response.statusCode != 200) {
+      throw ApkInstallerException('Falha no download (HTTP ${response.statusCode})');
+    }
+
+    final total = response.contentLength ?? 0;
+    var received = 0;
+    final sink = file.openWrite();
+
+    try {
+      await response.stream.map((chunk) {
+        received += chunk.length;
+        if (total > 0) onProgress?.call(received / total);
+        return chunk;
+      }).pipe(sink);
+    } catch (e) {
+      await sink.close();
+      throw ApkInstallerException('Erro ao gravar arquivo APK: $e');
+    }
+    await sink.close();
+
+    if (!await file.exists() || await file.length() == 0) {
+      throw ApkInstallerException('Arquivo APK baixado está vazio ou corrompido.');
+    }
+
+    return file;
   }
+
+  void dispose() => _client.close();
 }
