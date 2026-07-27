@@ -1,115 +1,43 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/store_app.dart';
-import '../services/apk_installer_service.dart';
 
-class InstallButton extends StatefulWidget {
-  final StoreApp app;
-  final ApkInstallerService? installerService;
-
-  const InstallButton({
-    Key? key,
-    required this.app,
-    this.installerService,
-  }) : super(key: key);
+class ApkInstallerException implements Exception {
+  final String message;
+  ApkInstallerException(this.message);
 
   @override
-  State<InstallButton> createState() => _InstallButtonState();
+  String toString() => 'ApkInstallerException: $message';
 }
 
-class _InstallButtonState extends State<InstallButton> {
-  late final ApkInstallerService _installer;
-  bool _isLoading = false;
-  double _progress = 0.0;
+class ApkInstallerService {
+  bool _disposed = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _installer = widget.installerService ?? ApkInstallerService();
-  }
-
-  @override
-  void dispose() {
-    if (widget.installerService == null) {
-      _installer.dispose();
-    }
-    super.dispose();
-  }
-
-  Future<void> _handleInstall() async {
-    setState(() {
-      _isLoading = true;
-      _progress = 0.0;
-    });
+  /// Instala ou abre o app. Implemente sua lógica real aqui.
+  Future<void> installOrOpen(
+    StoreApp app, {
+    required void Function(double progress) onProgress,
+  }) async {
+    if (_disposed) return;
 
     try {
-      await _installer.installOrOpen(
-        widget.app,
-        onProgress: (progress) {
-          if (mounted) {
-            setState(() {
-              _progress = progress;
-            });
-          }
-        },
-      );
+      // Simulação de download com progresso
+      // Substitua pela sua lógica real de download + instalação
+      for (int i = 1; i <= 10; i++) {
+        if (_disposed) return;
+        await Future.delayed(const Duration(milliseconds: 200));
+        onProgress(i / 10);
+      }
+
+      // Aqui você coloca a instalação real do APK
+      // Exemplo: usar intent do Android, plugin open_file, etc.
+      debugPrint('Instalando ${app.name}...');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: ${e.toString().replaceAll('ApkInstallerException: ', '')}')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _progress = 0.0;
-        });
-      }
+      throw ApkInstallerException(e.toString());
     }
   }
 
-  @override
-  Widget build(context) {
-    final themeDividerColor = Theme.of(context).dividerColor;
-    const primaryColor = Colors.green;
-
-    return InkWell(
-      onTap: _isLoading ? null : _handleInstall,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: _isLoading ? Colors.grey.shade300 : primaryColor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: _isLoading
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      value: _progress > 0 ? _progress : null,
-                      strokeWidth: 2,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _progress > 0 ? '${(_progress * 100).toStringAsFixed(0)}%' : 'Baixando...',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )
-            : const Text(
-                'Install',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-      ),
-    );
+  void dispose() {
+    _disposed = true;
   }
 }
