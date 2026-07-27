@@ -24,7 +24,7 @@ class ApkInstallerService {
 
   Future<bool> isInstalled(String packageName) async {
     try {
-      return await DeviceApps.isAppInstalled(packageName);  // ✅ CORRIGIDO AQUI
+      return await DeviceApps.isAppInstalled(packageName);
     } catch (e) {
       debugPrint('Erro ao verificar instalação: $e');
       return false;
