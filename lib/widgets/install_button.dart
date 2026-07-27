@@ -119,12 +119,12 @@ class _InstallButtonState extends State<InstallButton> {
     switch (_status) {
       case _InstallStatus.checking:
         return _largeShell(
-          color: GMAppDividerColor, // ✅ corrigido: era appDividerColor
+          color: GMAppDividerColor, // ✅ ajustado: era appDividerColor
           child: const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)),
         );
       case _InstallStatus.unavailable:
         return _largeShell(
-          color: GMAppDividerColor, // ✅ corrigido
+          color: GMAppDividerColor, // ✅ ajustado: era appDividerColor
           child: Text('Indisponível', style: primaryTextStyle(color: Colors.black38)),
         );
       case _InstallStatus.installing:
@@ -138,7 +138,7 @@ class _InstallButtonState extends State<InstallButton> {
         );
       case _InstallStatus.installed:
         return _largeShell(
-          color: GMAppDividerColor, // ✅ corrigido
+          color: GMAppDividerColor, // ✅ ajustado: era appDividerColor
           onTap: _handleTap,
           child: Text('Abrir', style: primaryTextStyle(color: psColorGreen)),
         );
@@ -159,7 +159,7 @@ class _InstallButtonState extends State<InstallButton> {
 
   Widget _largeShell({required Color? color, required Widget child, VoidCallback? onTap}) {
     return Container(
-      // ✅ corrigido: BoxDecoration nativo no lugar de boxDecoration() que não resolvia no CI
+      // ✅ ajustado: BoxDecoration nativo no lugar de boxDecoration()
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(8),
