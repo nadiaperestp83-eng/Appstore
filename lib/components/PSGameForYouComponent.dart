@@ -3,6 +3,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSDetailScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
+import 'package:playstore_flutter/widgets/install_button.dart';
 
 class PSGameForYouComponent extends StatelessWidget {
   static String tag = '/ItemWidget';
@@ -56,7 +57,9 @@ class PSGameForYouComponent extends StatelessWidget {
                     ],
                   ),
                 ],
-              )
+              ),
+              8.height,
+              Align(alignment: Alignment.centerLeft, child: InstallButton(app: data, size: InstallButtonSize.small)),
             ],
           ),
         ),
