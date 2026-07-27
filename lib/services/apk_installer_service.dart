@@ -25,31 +25,32 @@ class ApkInstallerPermissionRequiredException implements Exception {
 }
 
 /// Baixa um .apk e aciona o instalador nativo do Android.
-/// Se o app já estiver instalado (checagem por package name, disponível
-/// para apps de origem 'fdroid'), abre o app em vez de reinstalar.
+/// Se o app já foi instalado/aberto nesta sessão (ver [isInstalled]), abre
+/// o app em vez de reinstalar.
 class ApkInstallerService {
   final http.Client _client;
   ApkInstallerService({http.Client? client}) : _client = client ?? http.Client();
 
-  /// Verifica se o pacote já está instalado no dispositivo.
-  /// Só funciona de forma confiável para apps 'fdroid', cujo StoreApp.id
-  /// é o package name real. Para 'github', o package name não é conhecido
-  /// antecipadamente (só existe dentro do .apk).
+  // `DeviceApps.isAppInstalled` (device_apps: ^2.2.0) não compila neste
+  // projeto - a versão resolvida do pacote não expõe esse método do jeito
+  // documentado (erro: "Member not found: 'FlutterDeviceApps.isAppInstalled'").
+  // Em vez de depender dele, controlamos localmente quais pacotes foram
+  // instalados/abertos nesta sessão do app. `DeviceApps.openApp` continua
+  // em uso normalmente (não é o método que está quebrado).
+  static final Set<String> _installedThisSession = {};
+
+  /// Verifica se o pacote já foi instalado durante esta sessão do app.
+  /// Não é uma checagem real do sistema operacional (isso exigiria
+  /// `DeviceApps.isAppInstalled`, que está quebrado nesta versão do
+  /// pacote) - então, ao reabrir o app do zero, tudo volta a aparecer como
+  /// "não instalado" mesmo que já esteja no aparelho. É um trade-off
+  /// deliberado para não travar o build por causa de uma API instável.
   Future<bool> isInstalled(String packageName) async {
-    if (!Platform.isAndroid) return false;
-    try {
-      return await DeviceApps.isAppInstalled(packageName);
-    } catch (_) {
-      return false;
-    }
+    return _installedThisSession.contains(packageName);
   }
 
-  /// Fluxo principal: se o app já está instalado, abre-o.
+  /// Fluxo principal: se o app já foi instalado/aberto nesta sessão, abre-o.
   /// Caso contrário, baixa o .apk e aciona o instalador do sistema.
-  ///
-  /// A checagem de "já instalado" só é confiável quando o package name é
-  /// conhecido de antemão (Aptoide e F-Droid sempre sabem; GitHub só sabe
-  /// depois de baixar o .apk e ler o manifest, então fica de fora daqui).
   Future<void> installOrOpen(
     StoreApp app, {
     void Function(double progress)? onProgress,
@@ -76,6 +77,14 @@ class ApkInstallerService {
         'A instalação demorou demais e foi cancelada. Verifique sua conexão e tente de novo.',
       ),
     );
+
+    // A partir daqui o instalador nativo do Android abriu com sucesso; a
+    // confirmação final é do usuário na tela do sistema. Marcamos como
+    // "instalado" nesta sessão pra próxima vez oferecer "Abrir" em vez de
+    // "Instalar" de novo.
+    if (knownPackageName != null && knownPackageName.isNotEmpty) {
+      _installedThisSession.add(knownPackageName);
+    }
   }
 
   /// Baixa o .apk de [downloadUrl] e abre o instalador nativo do Android.
