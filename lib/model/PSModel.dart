@@ -30,6 +30,8 @@ class PSGameModel {
   String? version; // versão da fonte preferida
   String? preferredRepoLabel; // nome da fonte escolhida como padrão
   List<PSAppSourceOption>? availableSourceOptions; // todas as fontes, com downloadUrl de cada uma
+  String? developer;
+  int? downloads;
 
   PSGameModel({
     this.imagesData,
@@ -49,6 +51,8 @@ class PSGameModel {
     this.version,
     this.preferredRepoLabel,
     this.availableSourceOptions,
+    this.developer,
+    this.downloads,
   });
 
   bool get isRealApp => packageName != null;
