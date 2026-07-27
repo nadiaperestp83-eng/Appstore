@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/components/PSAppsForYouComponent.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
+import 'package:playstore_flutter/utils/AppColors.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
 
