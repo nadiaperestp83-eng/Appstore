@@ -35,16 +35,21 @@ class ApkInstallerService {
 
   /// Fluxo principal: se o app já está instalado, abre-o.
   /// Caso contrário, baixa o .apk e aciona o instalador do sistema.
+  ///
+  /// A checagem de "já instalado" só é confiável quando o package name é
+  /// conhecido de antemão (Aptoide e F-Droid sempre sabem; GitHub só sabe
+  /// depois de baixar o .apk e ler o manifest, então fica de fora daqui).
   Future<void> installOrOpen(
     StoreApp app, {
     void Function(double progress)? onProgress,
   }) async {
-    if (app.source == 'fdroid') {
-      final already = await isInstalled(app.id);
+    final knownPackageName = app.packageName;
+    if (knownPackageName != null && knownPackageName.isNotEmpty) {
+      final already = await isInstalled(knownPackageName);
       if (already) {
-        final opened = await DeviceApps.openApp(app.id);
+        final opened = await DeviceApps.openApp(knownPackageName);
         if (opened != true) {
-          throw ApkInstallerException('Não foi possível abrir "${app.title}" (${app.id}).');
+          throw ApkInstallerException('Não foi possível abrir "${app.title}" ($knownPackageName).');
         }
         return;
       }
