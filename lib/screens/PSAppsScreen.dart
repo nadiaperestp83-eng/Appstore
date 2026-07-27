@@ -25,21 +25,17 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
   TabController? _tabController;
   int tabIndex = 0;
 
-  // ===== Apps reais (GitHub + F-Droid), distribuídos nas mesmas seções
-  // que a UI já usa (Recommended for you, Educational apps, Music Players,
-  // Tools & utilities), em lotes de até 20 por seção. =====
-  // Para adicionar repositórios do GitHub, preencha githubRepos abaixo,
-  // ex: ['Genymobile/scrcpy', 'termux/termux-app'].
+  // ===== Apps reais via Aptoide (busca por termo), distribuídos nas
+  // mesmas seções que a UI já usa (Recommended for you, Educational apps,
+  // Music Players, Tools & utilities), em lotes de até 20 por seção.
+  // F-Droid/GitHub saíram daqui e agora vivem na aba "Apps livres". =====
   late Future<Map<String, List<PSGameModel>>> _realSectionsFuture;
 
   @override
   void initState() {
     super.initState();
     init();
-    _realSectionsFuture = getRealAppsBySection(
-      githubRepos: const [],
-      perSectionLimit: 20,
-    );
+    _realSectionsFuture = getAptoideAppsBySection(perSectionLimit: 20);
   }
 
   init() async {
