@@ -1,141 +1,115 @@
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:device_apps/device_apps.dart';
+import 'package:flutter/material.dart';
 import '../models/store_app.dart';
+import '../services/apk_installer_service.dart';
 
-class ApkInstallerException implements Exception {
-  final String message;
-  ApkInstallerException(this.message);
+class InstallButton extends StatefulWidget {
+  final StoreApp app;
+  final ApkInstallerService? installerService;
+
+  const InstallButton({
+    Key? key,
+    required this.app,
+    this.installerService,
+  }) : super(key: key);
+
   @override
-  String toString() => 'ApkInstallerException: $message';
+  State<InstallButton> createState() => _InstallButtonState();
 }
 
-/// Baixa um .apk e aciona o instalador nativo do Android.
-/// Se o app já estiver instalado (checagem por package name, disponível
-/// para apps de origem 'fdroid'), abre o app em vez de reinstalar.
-class ApkInstallerService {
-  final http.Client _client;
-  ApkInstallerService({http.Client? client}) : _client = client ?? http.Client();
+class _InstallButtonState extends State<InstallButton> {
+  late final ApkInstallerService _installer;
+  bool _isLoading = false;
+  double _progress = 0.0;
 
-  /// Verifica se o pacote já está instalado no dispositivo.
-  /// Só funciona de forma confiável para apps 'fdroid', cujo StoreApp.id
-  /// é o package name real. Para 'github', o package name não é conhecido
-  /// antecipadamente (só existe dentro do .apk).
-  Future<bool> isInstalled(String packageName) async {
-    if (!Platform.isAndroid) return false;
-    try {
-      return await DeviceApps.isAppInstalled(packageName);
-    } catch (_) {
-      return false;
-    }
+  @override
+  void initState() {
+    super.initState();
+    _installer = widget.installerService ?? ApkInstallerService();
   }
 
-  /// Fluxo principal: se o app já está instalado, abre-o.
-  /// Caso contrário, baixa o .apk e aciona o instalador do sistema.
-  ///
-  /// A checagem de "já instalado" só é confiável quando o package name é
-  /// conhecido de antemão (Aptoide e F-Droid sempre sabem; GitHub só sabe
-  /// depois de baixar o .apk e ler o manifest, então fica de fora daqui).
-  Future<void> installOrOpen(
-    StoreApp app, {
-    void Function(double progress)? onProgress,
-  }) async {
-    final knownPackageName = app.packageName;
-    if (knownPackageName != null && knownPackageName.isNotEmpty) {
-      final already = await isInstalled(knownPackageName);
-      if (already) {
-        final opened = await DeviceApps.openApp(knownPackageName);
-        if (opened != true) {
-          throw ApkInstallerException('Não foi possível abrir "${app.title}" ($knownPackageName).');
-        }
-        return;
+  @override
+  void dispose() {
+    if (widget.installerService == null) {
+      _installer.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _handleInstall() async {
+    setState(() {
+      _isLoading = true;
+      _progress = 0.0;
+    });
+
+    try {
+      await _installer.installOrOpen(
+        widget.app,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() {
+              _progress = progress;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: ${e.toString().replaceAll('ApkInstallerException: ', '')}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _progress = 0.0;
+        });
       }
     }
-
-    final fileName = '${app.id.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_')}_${app.version}.apk';
-    await downloadAndInstall(app.downloadUrl, fileName: fileName, onProgress: onProgress);
   }
 
-  /// Baixa o .apk de [downloadUrl] e abre o instalador nativo do Android.
-  Future<void> downloadAndInstall(
-    String downloadUrl, {
-    required String fileName,
-    void Function(double progress)? onProgress,
-  }) async {
-    if (!downloadUrl.toLowerCase().endsWith('.apk')) {
-      throw ApkInstallerException('URL não aponta para um .apk direto: $downloadUrl');
-    }
+  @override
+  Widget build(context) {
+    final themeDividerColor = Theme.of(context).dividerColor;
+    const primaryColor = Colors.green;
 
-    final granted = await _ensureInstallPermission();
-    if (!granted) {
-      throw ApkInstallerException(
-        'Permissão "Instalar apps desconhecidos" não concedida pelo usuário.',
-      );
-    }
-
-    final file = await _download(downloadUrl, fileName, onProgress);
-    final result = await OpenFile.open(file.path);
-
-    if (result.type != ResultType.done) {
-      throw ApkInstallerException(
-        'Falha ao abrir o instalador: ${result.message} (${result.type})',
-      );
-    }
+    return InkWell(
+      onTap: _isLoading ? null : _handleInstall,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: _isLoading ? Colors.grey.shade300 : primaryColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: _isLoading
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      value: _progress > 0 ? _progress : null,
+                      strokeWidth: 2,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _progress > 0 ? '${(_progress * 100).toStringAsFixed(0)}%' : 'Baixando...',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              )
+            : const Text(
+                'Install',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+      ),
+    );
   }
-
-  Future<bool> _ensureInstallPermission() async {
-    if (!Platform.isAndroid) return true;
-    final status = await Permission.requestInstallPackages.status;
-    if (status.isGranted) return true;
-    final result = await Permission.requestInstallPackages.request();
-    return result.isGranted;
-  }
-
-  Future<File> _download(
-    String url,
-    String fileName,
-    void Function(double progress)? onProgress,
-  ) async {
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/$fileName');
-
-    http.StreamedResponse response;
-    try {
-      final request = http.Request('GET', Uri.parse(url));
-      response = await _client.send(request).timeout(const Duration(seconds: 30));
-    } catch (e) {
-      throw ApkInstallerException('Erro de rede ao baixar APK: $e');
-    }
-
-    if (response.statusCode != 200) {
-      throw ApkInstallerException('Falha no download (HTTP ${response.statusCode})');
-    }
-
-    final total = response.contentLength ?? 0;
-    var received = 0;
-    final sink = file.openWrite();
-
-    try {
-      await response.stream.map((chunk) {
-        received += chunk.length;
-        if (total > 0) onProgress?.call(received / total);
-        return chunk;
-      }).pipe(sink);
-    } catch (e) {
-      await sink.close();
-      throw ApkInstallerException('Erro ao gravar arquivo APK: $e');
-    }
-    await sink.close();
-
-    if (!await file.exists() || await file.length() == 0) {
-      throw ApkInstallerException('Arquivo APK baixado está vazio ou corrompido.');
-    }
-
-    return file;
-  }
-
-  void dispose() => _client.close();
 }
