@@ -110,7 +110,12 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
           ],
         ),
       ),
-      body: pages[currentIndex],
+      // IndexedStack em vez de `pages[currentIndex]`: mantém o State de
+      // TODAS as abas vivo o tempo todo. Antes, trocar de aba tirava o
+      // widget da árvore (destruindo o State) e, ao voltar, recriava tudo
+      // do zero - refazendo TODAS as buscas de rede de novo. Esse era o
+      // principal gerador de "loop de load" da aplicação.
+      body: IndexedStack(index: currentIndex, children: pages),
       drawer: Drawer(
         child: SingleChildScrollView(
           child: Container(
