@@ -13,6 +13,17 @@ class ApkInstallerException implements Exception {
   String toString() => 'ApkInstallerException: $message';
 }
 
+/// Lançada quando a permissão "Instalar apps desconhecidos" ainda não foi
+/// concedida. Diferente das outras falhas: aqui a tela de Configurações do
+/// Android já foi aberta para o usuário autorizar - a UI deve avisar isso
+/// claramente (não é um erro definitivo, é "volte e tente de novo").
+class ApkInstallerPermissionRequiredException implements Exception {
+  final String message;
+  ApkInstallerPermissionRequiredException(this.message);
+  @override
+  String toString() => 'ApkInstallerPermissionRequiredException: $message';
+}
+
 /// Baixa um .apk e aciona o instalador nativo do Android.
 /// Se o app já estiver instalado (checagem por package name, disponível
 /// para apps de origem 'fdroid'), abre o app em vez de reinstalar.
@@ -56,7 +67,15 @@ class ApkInstallerService {
     }
 
     final fileName = '${app.id.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_')}_${app.version}.apk';
-    await downloadAndInstall(app.downloadUrl, fileName: fileName, onProgress: onProgress);
+    // Timeout duro no fluxo inteiro: nada aqui (download, gravação em disco,
+    // permissão, abertura do instalador) pode deixar o botão preso na barra
+    // de progresso pra sempre, mesmo se algum plugin nativo travar.
+    await downloadAndInstall(app.downloadUrl, fileName: fileName, onProgress: onProgress).timeout(
+      const Duration(minutes: 3),
+      onTimeout: () => throw ApkInstallerException(
+        'A instalação demorou demais e foi cancelada. Verifique sua conexão e tente de novo.',
+      ),
+    );
   }
 
   /// Baixa o .apk de [downloadUrl] e abre o instalador nativo do Android.
@@ -69,10 +88,10 @@ class ApkInstallerService {
       throw ApkInstallerException('URL não aponta para um .apk direto: $downloadUrl');
     }
 
-    final granted = await _ensureInstallPermission();
-    if (!granted) {
-      throw ApkInstallerException(
-        'Permissão "Instalar apps desconhecidos" não concedida pelo usuário.',
+    final permissionResult = await _ensureInstallPermission();
+    if (permissionResult == _PermissionOutcome.openedSettingsForUser) {
+      throw ApkInstallerPermissionRequiredException(
+        'Autorize "Instalar apps desconhecidos" para este app na tela que abriu e toque em Instalar de novo.',
       );
     }
 
@@ -86,12 +105,46 @@ class ApkInstallerService {
     }
   }
 
-  Future<bool> _ensureInstallPermission() async {
-    if (!Platform.isAndroid) return true;
-    final status = await Permission.requestInstallPackages.status;
-    if (status.isGranted) return true;
-    final result = await Permission.requestInstallPackages.request();
-    return result.isGranted;
+  /// A permissão "Instalar apps desconhecidos" (REQUEST_INSTALL_PACKAGES) não
+  /// é uma permissão comum: `.request()` abre a tela de Configurações do
+  /// Android para o usuário autorizar manualmente e o Future retorna quase
+  /// na hora, SEM esperar o usuário voltar. Por isso nunca tratamos o
+  /// resultado de `.request()` como resposta definitiva de "negado" - só
+  /// como "as Configurações foram abertas, avise o usuário pra tentar de
+  /// novo depois". Também colocamos timeout: em alguns aparelhos/versões do
+  /// plugin esse `await` pode nunca resolver, e isso é exatamente o que
+  /// fazia o botão ficar preso na barra de progresso pra sempre.
+  Future<_PermissionOutcome> _ensureInstallPermission() async {
+    if (!Platform.isAndroid) return _PermissionOutcome.granted;
+
+    PermissionStatus status;
+    try {
+      status = await Permission.requestInstallPackages.status.timeout(const Duration(seconds: 10));
+    } catch (_) {
+      status = PermissionStatus.denied;
+    }
+    if (status.isGranted) return _PermissionOutcome.granted;
+
+    try {
+      await Permission.requestInstallPackages.request().timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // Se travar/der erro, cai no mesmo tratamento de "abriu configurações,
+      // usuário precisa voltar e tentar de novo" abaixo.
+    }
+
+    // Reconsulta o status: em alguns devices o request() já reflete a
+    // resposta (ex.: usuário já tinha autorizado antes); na maioria dos
+    // casos ainda estará "denied" porque a troca só acontece depois que o
+    // usuário mexe nas Configurações e volta pro app.
+    PermissionStatus recheck;
+    try {
+      recheck = await Permission.requestInstallPackages.status.timeout(const Duration(seconds: 10));
+    } catch (_) {
+      recheck = status;
+    }
+    if (recheck.isGranted) return _PermissionOutcome.granted;
+
+    return _PermissionOutcome.openedSettingsForUser;
   }
 
   Future<File> _download(
@@ -139,3 +192,5 @@ class ApkInstallerService {
 
   void dispose() => _client.close();
 }
+
+enum _PermissionOutcome { granted, openedSettingsForUser }
