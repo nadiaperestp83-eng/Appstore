@@ -7,8 +7,8 @@ import 'package:playstore_flutter/screens/PSAccountScreen.dart';
 import 'package:playstore_flutter/screens/PSAppsGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSBookScreen.dart';
+import 'package:playstore_flutter/screens/PSFreeAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSGamesScreen.dart';
-import 'package:playstore_flutter/screens/PSMoviesScreen.dart';
 import 'package:playstore_flutter/screens/PSNavigationScreen.dart';
 import 'package:playstore_flutter/screens/PSNotificationScreen.dart';
 import 'package:playstore_flutter/screens/PSPaymentScreen.dart';
@@ -36,7 +36,7 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
   final pages = <Widget>[
     PSGamesScreen(),
     PSAppsScreen(),
-    PSMoviesScreen(),
+    PSFreeAppsScreen(),
     PSBookScreen(),
   ];
 
@@ -283,9 +283,9 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
               title: Text('Apps'),
               backgroundColor: Colors.white),
           BottomNavigationBarItem(
-              icon: Icon(Icons.local_movies_outlined, size: 25),
-              activeIcon: Icon(MaterialIcons.local_movies, size: 25),
-              title: Text('Movies'),
+              icon: Icon(MaterialCommunityIcons.source_branch, size: 25),
+              activeIcon: Icon(MaterialCommunityIcons.source_repository, size: 25),
+              title: Text('Apps livres'),
               backgroundColor: Colors.white),
           BottomNavigationBarItem(
               icon: Icon(AntDesign.book, size: 25),
