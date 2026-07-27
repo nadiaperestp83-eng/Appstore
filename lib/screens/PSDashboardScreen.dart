@@ -285,7 +285,7 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
           BottomNavigationBarItem(
               icon: Icon(MaterialCommunityIcons.source_branch, size: 25),
               activeIcon: Icon(MaterialCommunityIcons.source_repository, size: 25),
-              title: Text('Apps livres'),
+              label: 'Apps livres',
               backgroundColor: Colors.white),
           BottomNavigationBarItem(
               icon: Icon(AntDesign.book, size: 25),
