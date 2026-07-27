@@ -24,7 +24,6 @@ class ApkInstallerService {
 
   Future<bool> isInstalled(String packageName) async {
     try {
-      // ⚠️⚠️⚠️ LINHA 27 - AQUI É DeviceApps SEM "Flutter" NA FRENTE ⚠️⚠️⚠️
       return await DeviceApps.isAppInstalled(packageName);
     } catch (e) {
       debugPrint('Erro ao verificar instalação: $e');
@@ -97,7 +96,7 @@ class ApkInstallerService {
     String url,
     String fileName,
     void Function(double progress)? onProgress,
-  ) async {
+  }) async {
     try {
       final tempDir = await getTemporaryDirectory();
       final savePath = '${tempDir.path}/$fileName';
