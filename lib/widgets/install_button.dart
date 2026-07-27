@@ -6,24 +6,13 @@ import 'package:playstore_flutter/models/store_app.dart';
 import 'package:playstore_flutter/services/apk_installer_service.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 
-/// Instância única do serviço de instalação para o app inteiro. Todo botão
-/// de instalar (listagens + tela de detalhes) passa por aqui - é o "Serviço
-/// Central de instalação" pedido: um único lugar decide como baixar e
-/// acionar o instalador nativo, nenhuma tela reimplementa essa lógica.
+/// Instância única do serviço de instalação para o app inteiro.
 final ApkInstallerService _sharedInstaller = ApkInstallerService();
 
 enum InstallButtonSize { small, large }
 
 enum _InstallStatus { checking, notInstalled, installing, installed, error, unavailable }
 
-/// Botão de instalar/abrir reutilizável. Use [InstallButtonSize.large] na
-/// tela de detalhes e [InstallButtonSize.small] nas listagens/cards.
-///
-/// Recebe um [PSGameModel] porque é o tipo que todas as telas já usam pra
-/// exibir apps; internamente ele é convertido pro [StoreApp] real que o
-/// [ApkInstallerService] espera. Se o item não tiver dado real (packageName
-/// / downloadUrl), o botão fica desabilitado em vez de quebrar - acontece
-/// hoje com Movies/Books, que ainda não foram migrados pra uma fonte real.
 class InstallButton extends StatefulWidget {
   final PSGameModel app;
   final InstallButtonSize size;
@@ -85,7 +74,7 @@ class _InstallButtonState extends State<InstallButton> {
     if (app == null) return;
 
     if (_status == _InstallStatus.installed) {
-      await _refreshInstalledState(); // reabre via installOrOpen abaixo se ainda instalado
+      await _refreshInstalledState();
     }
 
     setState(() {
@@ -126,7 +115,6 @@ class _InstallButtonState extends State<InstallButton> {
     return widget.size == InstallButtonSize.large ? _buildLarge(context) : _buildSmall(context);
   }
 
-  // ===== Tamanho grande (PSDetailScreen) =====
   Widget _buildLarge(BuildContext context) {
     switch (_status) {
       case _InstallStatus.checking:
@@ -178,7 +166,6 @@ class _InstallButtonState extends State<InstallButton> {
     ).onTap(onTap);
   }
 
-  // ===== Tamanho pequeno (cards de listagem) =====
   Widget _buildSmall(BuildContext context) {
     switch (_status) {
       case _InstallStatus.checking:
