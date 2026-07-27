@@ -22,25 +22,21 @@ class ApkInstallerService {
 
   final Dio _dio = Dio();
 
-  /// Verifica se o app já está instalado pelo packageName.
   Future<bool> isInstalled(String packageName) async {
     try {
-      // ✅ CORRIGIDO: DeviceApps (não FlutterDeviceApps)
-      return await DeviceApps.isAppInstalled(packageName);
+      return await DeviceApps.isAppInstalled(packageName);  // ✅ CORRIGIDO AQUI
     } catch (e) {
       debugPrint('Erro ao verificar instalação: $e');
       return false;
     }
   }
 
-  /// Abre o app se instalado, senão baixa e instala.
   Future<void> installOrOpen(
     StoreApp app, {
     void Function(double progress)? onProgress,
   }) async {
     final knownPackageName = app.packageName;
 
-    // Tenta abrir diretamente se estiver instalado
     if (knownPackageName != null && knownPackageName.isNotEmpty) {
       final already = await isInstalled(knownPackageName);
       if (already) {
@@ -49,7 +45,6 @@ class ApkInstallerService {
       }
     }
 
-    // Download + instalação
     final safeId = app.id.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
     final version = app.version.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
     final fileName = '${safeId}_$version.apk';
@@ -61,7 +56,6 @@ class ApkInstallerService {
     );
   }
 
-  /// Garante permissão de instalação e dispara o instalador nativo.
   Future<void> downloadAndInstall(
     String downloadUrl, {
     required String fileName,
@@ -76,7 +70,6 @@ class ApkInstallerService {
 
     final file = await _download(downloadUrl, fileName, onProgress);
 
-    // Dispara o instalador nativo do Android
     final result = await OpenFile.open(
       file.path,
       type: 'application/vnd.android.package-archive',
@@ -89,7 +82,6 @@ class ApkInstallerService {
     }
   }
 
-  /// Solicita permissão REQUEST_INSTALL_PACKAGES (Android 8+).
   Future<bool> _ensureInstallPermission() async {
     if (!Platform.isAndroid) return false;
 
@@ -100,7 +92,6 @@ class ApkInstallerService {
     return requested.isGranted;
   }
 
-  /// Baixa o APK para o diretório temporário com progresso.
   Future<File> _download(
     String url,
     String fileName,
