@@ -328,6 +328,35 @@ Future<List<HubApp>> _fetchAndMergeHubApps({
   return mergeEngine.merge(allApps.cast());
 }
 
+/// Alimenta as seções da aba Games usando o Aptoide, buscando dinamicamente
+/// pelo NOME de cada categoria (ex: "Suggested for you" -> busca "Suggested
+/// for you game"). Não depende de nomes fixos hardcoded.
+Future<Map<String, List<PSGameModel>>> getAptoideGamesBySection(
+  List<String> sectionNames, {
+  int perSectionLimit = 20,
+}) async {
+  final aptoide = AptoideStoreEngine();
+
+  final results = await Future.wait(
+    sectionNames.map((name) async {
+      try {
+        final apps = await aptoide.searchApps('$name game', limit: perSectionLimit);
+        return MapEntry(name, apps);
+      } catch (e) {
+        // ignore: avoid_print
+        print('[getAptoideGamesBySection] "$name" falhou: $e');
+        return MapEntry(name, <StoreApp>[]);
+      }
+    }),
+  );
+
+  aptoide.dispose();
+
+  return {
+    for (final entry in results) entry.key: entry.value.map(_storeAppToGameModel).toList(),
+  };
+}
+
 /// Alimenta os carrosséis da aba Apps usando o Aptoide (busca por termo,
 /// já que a API deles não tem um dump completo do catálogo como o F-Droid).
 Future<Map<String, List<PSGameModel>>> getAptoideAppsBySection({
@@ -380,12 +409,14 @@ PSGameModel _storeAppToGameModel(StoreApp app) {
     subTitle: app.description,
     imgLogo: app.iconUrl,
     imgMain: app.iconUrl,
-    appSize: 0,
-    rating: 0,
+    appSize: app.sizeBytes > 0 ? app.sizeBytes / (1024 * 1024) : 0,
+    rating: app.ratingAvg ?? 0,
     packageName: app.packageName,
     downloadUrl: app.downloadUrl,
     version: app.version,
     preferredRepoLabel: app.repoLabel,
+    developer: app.developer,
+    downloads: app.downloads,
     availableSourceOptions: [
       PSAppSourceOption(
         repoLabel: app.repoLabel,
