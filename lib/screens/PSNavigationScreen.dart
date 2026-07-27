@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:playstore_flutter/screens/PSSearchResultsScreen.dart';
 import 'package:playstore_flutter/utils/PSImages.dart';
 
 class AppScreen extends StatefulWidget {
@@ -12,6 +13,8 @@ class AppScreen extends StatefulWidget {
 }
 
 class AppScreenState extends State<AppScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +28,18 @@ class AppScreenState extends State<AppScreen> {
   @override
   void setState(fn) {
     if (mounted) super.setState(fn);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _runSearch(BuildContext context) {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+    PSSearchResultsScreen(query: query).launch(context);
   }
 
   @override
@@ -45,10 +60,16 @@ class AppScreenState extends State<AppScreen> {
           ),
           8.width,
           TextFormField(
-            showCursor: false,
+            controller: _searchController,
+            showCursor: true,
+            textInputAction: TextInputAction.search,
+            onFieldSubmitted: (_) => _runSearch(context),
             decoration: InputDecoration(focusedBorder: InputBorder.none, enabledBorder: InputBorder.none, errorBorder: InputBorder.none, hintText: 'Search for apps & games'),
           ).expand(),
-          8.width,
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () => _runSearch(context),
+          ),
           IconButton(
             icon: Icon(Icons.keyboard_voice_outlined),
             onPressed: () {},
@@ -98,8 +119,10 @@ class AppScreenState extends State<AppScreen> {
                     child: Text('S', style: TextStyle(color: Colors.white)),
                   ),
                 ),
-                FlatButton(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.black26)),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.black26)),
+                  ),
                   onPressed: () {},
                   child: Text('My Account'),
                 ),
@@ -129,8 +152,8 @@ class AppScreenState extends State<AppScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    FlatButton(onPressed: () {}, child: Text('Privacy Policy', style: TextStyle(fontSize: 12))),
-                    FlatButton(onPressed: () {}, child: Text('Terms of Service', style: TextStyle(fontSize: 12))),
+                    TextButton(onPressed: () {}, child: Text('Privacy Policy', style: TextStyle(fontSize: 12))),
+                    TextButton(onPressed: () {}, child: Text('Terms of Service', style: TextStyle(fontSize: 12))),
                   ],
                 ),
               ],
