@@ -3,6 +3,8 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/models/store_app.dart';
 import 'package:playstore_flutter/services/apk_installer_service.dart';
+import 'package:playstore_flutter/utils/AppColors.dart';
+import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 
 /// Instância única do serviço de instalação para o app inteiro. Todo botão
