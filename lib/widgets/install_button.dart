@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
@@ -6,13 +5,24 @@ import 'package:playstore_flutter/models/store_app.dart';
 import 'package:playstore_flutter/services/apk_installer_service.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 
-/// Instância única do serviço de instalação para o app inteiro.
+/// Instância única do serviço de instalação para o app inteiro. Todo botão
+/// de instalar (listagens + tela de detalhes) passa por aqui - é o "Serviço
+/// Central de instalação" pedido: um único lugar decide como baixar e
+/// acionar o instalador nativo, nenhuma tela reimplementa essa lógica.
 final ApkInstallerService _sharedInstaller = ApkInstallerService();
 
 enum InstallButtonSize { small, large }
 
-enum _InstallStatus { checking, notInstalled, installing, installed, error, unavailable }
+enum _InstallStatus { checking, notInstalled, installing, installed, error, permissionRequired, unavailable }
 
+/// Botão de instalar/abrir reutilizável. Use [InstallButtonSize.large] na
+/// tela de detalhes e [InstallButtonSize.small] nas listagens/cards.
+///
+/// Recebe um [PSGameModel] porque é o tipo que todas as telas já usam pra
+/// exibir apps; internamente ele é convertido pro [StoreApp] real que o
+/// [ApkInstallerService] espera. Se o item não tiver dado real (packageName
+/// / downloadUrl), o botão fica desabilitado em vez de quebrar - acontece
+/// hoje com Movies/Books, que ainda não foram migrados pra uma fonte real.
 class InstallButton extends StatefulWidget {
   final PSGameModel app;
   final InstallButtonSize size;
@@ -27,7 +37,7 @@ class InstallButton extends StatefulWidget {
   State<InstallButton> createState() => _InstallButtonState();
 }
 
-class _InstallButtonState extends State<InstallButton> {
+class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserver {
   _InstallStatus _status = _InstallStatus.checking;
   double _progress = 0;
   String? _errorMessage;
@@ -55,7 +65,25 @@ class _InstallButtonState extends State<InstallButton> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshInstalledState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // O usuário só sai do app pra ir na tela "Instalar apps desconhecidos"
+    // das Configurações. Quando ele volta (app resumido) enquanto o botão
+    // está nesse estado, tenta instalar de novo automaticamente - assim
+    // ninguém precisa entender que precisa tocar de novo manualmente.
+    if (state == AppLifecycleState.resumed && _status == _InstallStatus.permissionRequired) {
+      _handleTap();
+    }
   }
 
   Future<void> _refreshInstalledState() async {
@@ -74,7 +102,7 @@ class _InstallButtonState extends State<InstallButton> {
     if (app == null) return;
 
     if (_status == _InstallStatus.installed) {
-      await _refreshInstalledState();
+      await _refreshInstalledState(); // reabre via installOrOpen abaixo se ainda instalado
     }
 
     setState(() {
@@ -93,6 +121,13 @@ class _InstallButtonState extends State<InstallButton> {
       );
       if (!mounted) return;
       setState(() => _status = _InstallStatus.installed);
+    } on ApkInstallerPermissionRequiredException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _status = _InstallStatus.permissionRequired;
+        _errorMessage = e.message;
+      });
+      toast(e.message);
     } on ApkInstallerException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -115,16 +150,17 @@ class _InstallButtonState extends State<InstallButton> {
     return widget.size == InstallButtonSize.large ? _buildLarge(context) : _buildSmall(context);
   }
 
+  // ===== Tamanho grande (PSDetailScreen) =====
   Widget _buildLarge(BuildContext context) {
     switch (_status) {
       case _InstallStatus.checking:
         return _largeShell(
-          color: GMAppDividerColor, // ✅ ajustado: era appDividerColor
-          child: const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+          color: appDividerColor,
+          child: SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)),
         );
       case _InstallStatus.unavailable:
         return _largeShell(
-          color: GMAppDividerColor, // ✅ ajustado: era appDividerColor
+          color: appDividerColor,
           child: Text('Indisponível', style: primaryTextStyle(color: Colors.black38)),
         );
       case _InstallStatus.installing:
@@ -138,9 +174,15 @@ class _InstallButtonState extends State<InstallButton> {
         );
       case _InstallStatus.installed:
         return _largeShell(
-          color: GMAppDividerColor, // ✅ ajustado: era appDividerColor
+          color: appDividerColor,
           onTap: _handleTap,
           child: Text('Abrir', style: primaryTextStyle(color: psColorGreen)),
+        );
+      case _InstallStatus.permissionRequired:
+        return _largeShell(
+          color: Colors.orange[50],
+          onTap: _handleTap,
+          child: Text('Autorizar nas Configurações e tentar de novo', style: primaryTextStyle(color: Colors.orange[800]), textAlign: TextAlign.center),
         );
       case _InstallStatus.error:
         return _largeShell(
@@ -159,23 +201,20 @@ class _InstallButtonState extends State<InstallButton> {
 
   Widget _largeShell({required Color? color, required Widget child, VoidCallback? onTap}) {
     return Container(
-      // ✅ ajustado: BoxDecoration nativo no lugar de boxDecoration()
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: boxDecoration(bgColor: color, radius: 8),
       width: double.infinity,
       height: 35,
       child: Center(child: child),
     ).onTap(onTap);
   }
 
+  // ===== Tamanho pequeno (cards de listagem) =====
   Widget _buildSmall(BuildContext context) {
     switch (_status) {
       case _InstallStatus.checking:
-        return const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2));
+        return SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2));
       case _InstallStatus.unavailable:
-        return const SizedBox.shrink();
+        return SizedBox.shrink();
       case _InstallStatus.installing:
         return _smallShell(
           color: Colors.transparent,
@@ -192,6 +231,13 @@ class _InstallButtonState extends State<InstallButton> {
           borderColor: Colors.grey[400],
           onTap: _handleTap,
           child: Text('Abrir', style: secondaryTextStyle(size: 11)),
+        );
+      case _InstallStatus.permissionRequired:
+        return _smallShell(
+          color: Colors.transparent,
+          borderColor: Colors.orange[300],
+          onTap: _handleTap,
+          child: Text('Autorizar', style: secondaryTextStyle(color: Colors.orange[800], size: 11)),
         );
       case _InstallStatus.error:
         return _smallShell(
@@ -213,7 +259,7 @@ class _InstallButtonState extends State<InstallButton> {
   Widget _smallShell({required Color? color, required Color? borderColor, required Widget child, VoidCallback? onTap}) {
     return Container(
       height: 26,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(14),
