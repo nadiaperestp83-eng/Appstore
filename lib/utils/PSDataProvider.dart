@@ -4,6 +4,7 @@ import 'package:playstore_flutter/utils/PSConstants.dart';
 import 'package:playstore_flutter/utils/PSImages.dart';
 import 'package:playstore_flutter/services/github_store_engine.dart';
 import 'package:playstore_flutter/services/fdroid_store_engine.dart';
+import 'package:playstore_flutter/services/aptoide_store_engine.dart';
 import 'package:playstore_flutter/services/hub_app.dart';
 import 'package:playstore_flutter/services/hub_app_merge_engine.dart';
 
@@ -326,7 +327,76 @@ Future<List<HubApp>> _fetchAndMergeHubApps({
   return mergeEngine.merge(allApps.cast());
 }
 
-/// Mantido para compatibilidade: busca tudo em uma lista só, sem separar por seção.
+/// Alimenta os carrosséis da aba Apps usando o Aptoide (busca por termo,
+/// já que a API deles não tem um dump completo do catálogo como o F-Droid).
+Future<Map<String, List<PSGameModel>>> getAptoideAppsBySection({
+  int perSectionLimit = 20,
+}) async {
+  final aptoide = AptoideStoreEngine();
+
+  const sectionQueries = {
+    'Recommended for you': 'app',
+    'Educational apps': 'education',
+    'Music Players': 'music player',
+    'Tools & utilities': 'tools utility',
+  };
+
+  final results = await Future.wait(
+    sectionQueries.entries.map((entry) async {
+      try {
+        final apps = await aptoide.searchApps(entry.value, limit: perSectionLimit);
+        return MapEntry(entry.key, apps);
+      } catch (e) {
+        // ignore: avoid_print
+        print('[getAptoideAppsBySection] "${entry.key}" falhou: $e');
+        return MapEntry(entry.key, <StoreApp>[]);
+      }
+    }),
+  );
+
+  aptoide.dispose();
+
+  return {
+    for (final entry in results) entry.key: entry.value.map(_storeAppToGameModel).toList(),
+  };
+}
+
+/// Busca livre no Aptoide (para conectar na barra de busca "Search for apps
+/// & games" já existente na tela).
+Future<List<PSGameModel>> searchAptoideApps(String query, {int limit = 30}) async {
+  final aptoide = AptoideStoreEngine();
+  try {
+    final apps = await aptoide.searchApps(query, limit: limit);
+    return apps.map(_storeAppToGameModel).toList();
+  } finally {
+    aptoide.dispose();
+  }
+}
+
+PSGameModel _storeAppToGameModel(StoreApp app) {
+  return PSGameModel(
+    title: app.title,
+    subTitle: app.description,
+    imgLogo: app.iconUrl,
+    imgMain: app.iconUrl,
+    appSize: 0,
+    rating: 0,
+    packageName: app.packageName,
+    downloadUrl: app.downloadUrl,
+    version: app.version,
+    preferredRepoLabel: app.repoLabel,
+    availableSourceOptions: [
+      PSAppSourceOption(
+        repoLabel: app.repoLabel,
+        version: app.version,
+        downloadUrl: app.downloadUrl,
+        source: app.source,
+      ),
+    ],
+  );
+}
+
+/// Usado pela aba "Apps livres": busca tudo (F-Droid + GitHub) em uma lista só.
 Future<List<PSGameModel>> getRealAppsList({
   List<String> githubRepos = const [],
   List<FDroidStoreEngine>? fdroidEngines,
