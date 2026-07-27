@@ -391,6 +391,67 @@ Future<Map<String, List<PSGameModel>>> getAptoideAppsBySection({
   };
 }
 
+// =========================================================================
+// Seções reais (Aptoide) para as abas "Games" e "Apps".
+// Substituem de vez os tabs mockados "Events", "Premium"/"Premium apps" e
+// "Editors'Choice"/"Editor's Choice", que não têm equivalente real na API
+// do Aptoide (não é scraping de app pago nem existe endpoint de "evento").
+// A categoria "Discover recommended games" também some daqui: as seções
+// abaixo já cobrem o mesmo papel ("For you"), só que com dados reais.
+// =========================================================================
+
+/// Nomes das seções da aba "For you" de Games. Cada nome vira uma busca
+/// "<nome> game" no Aptoide (ver [getAptoideGamesBySection]).
+const List<String> gamesForYouSectionNames = [
+  'Suggested for you',
+  'Rule the arcade',
+  'New and updated games',
+  'Trending now',
+];
+
+/// Nomes das categorias (chips) da aba "Top charts" de Games.
+const List<String> gamesTopChartsSectionNames = [
+  'Top free',
+  'Top grossing',
+  'Trending',
+];
+
+/// Nomes das categorias (chips) da aba "Top Charts" de Apps.
+const List<String> appsTopChartsSectionNames = [
+  'Top free',
+  'New releases',
+  'Trending',
+];
+
+/// Igual a [getAptoideAppsBySection], mas genérico: recebe a lista de nomes
+/// de seção e busca cada um literalmente (sem sufixo fixo), útil para
+/// "Top charts" de Apps, onde não faz sentido acrescentar "game" na busca.
+Future<Map<String, List<PSGameModel>>> getAptoideAppsCategorySections(
+  List<String> sectionNames, {
+  int perSectionLimit = 20,
+}) async {
+  final aptoide = AptoideStoreEngine();
+
+  final results = await Future.wait(
+    sectionNames.map((name) async {
+      try {
+        final apps = await aptoide.searchApps(name, limit: perSectionLimit);
+        return MapEntry(name, apps);
+      } catch (e) {
+        // ignore: avoid_print
+        print('[getAptoideAppsCategorySections] "$name" falhou: $e');
+        return MapEntry(name, <StoreApp>[]);
+      }
+    }),
+  );
+
+  aptoide.dispose();
+
+  return {
+    for (final entry in results) entry.key: entry.value.map(_storeAppToGameModel).toList(),
+  };
+}
+
 /// Busca livre no Aptoide (para conectar na barra de busca "Search for apps
 /// & games" já existente na tela).
 Future<List<PSGameModel>> searchAptoideApps(String query, {int limit = 30}) async {
