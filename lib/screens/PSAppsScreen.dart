@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
-import 'package:playstore_flutter/components/PSAppsForYouComponent.dart';
 import 'package:playstore_flutter/components/PSTopChartsFragment.dart';
+import 'package:playstore_flutter/components/apple/AppleAppListTile.dart';
+import 'package:playstore_flutter/components/apple/AppleFeaturedCard.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSGameViewAllScreen.dart';
-import 'package:playstore_flutter/utils/PSColor.dart';
+import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
 import 'package:playstore_flutter/utils/PSWidgets.dart';
 
@@ -60,23 +61,26 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
   Widget build(BuildContext context) {
     return Container(
       height: context.height(),
+      color: AppleColors.background,
       padding: EdgeInsets.only(top: 8),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 50,
+              height: 46,
               child: Container(
                 width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[300]!))),
+                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppleColors.divider, width: 1))),
                 child: TabBar(
-                  unselectedLabelColor: Colors.black54,
+                  unselectedLabelColor: AppleColors.textSecondary,
                   controller: _tabController,
-                  indicatorColor: Colors.green,
-                  labelColor: psColorGreen,
+                  indicatorColor: AppleColors.accentBlue,
+                  indicatorWeight: 2.5,
+                  labelColor: AppleColors.accentBlue,
                   indicatorSize: TabBarIndicatorSize.label,
-                  labelStyle: boldTextStyle(size: 12),
+                  labelStyle: boldTextStyle(size: 13),
+                  unselectedLabelStyle: primaryTextStyle(size: 13),
                   isScrollable: true,
                   tabs: _appsTabNames.map((name) => Tab(text: name)).toList(),
                   onTap: (i) {
@@ -141,7 +145,7 @@ class _ForYouSections extends StatelessWidget {
           return Container(
             padding: EdgeInsets.symmetric(vertical: 48, horizontal: 16),
             alignment: Alignment.center,
-            child: Text('Não foi possível carregar os apps agora.', style: secondaryTextStyle()),
+            child: Text('Não foi possível carregar os apps agora.', style: secondaryTextStyle(color: AppleColors.textSecondary)),
           );
         }
 
@@ -152,43 +156,86 @@ class _ForYouSections extends StatelessWidget {
           return Container(
             padding: EdgeInsets.symmetric(vertical: 48, horizontal: 16),
             alignment: Alignment.center,
-            child: Text('Nenhum app encontrado.', style: secondaryTextStyle()),
+            child: Text('Nenhum app encontrado.', style: secondaryTextStyle(color: AppleColors.textSecondary)),
           );
         }
 
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: nonEmptySections.map((name) {
             final list = sections[name]!;
-            final sectionModel = PSAppbarModel(name: name, list: list);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                16.height,
-                InkWell(
-                  onTap: () {
-                    PSGameViewAllScreen(data: sectionModel).launch(context);
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(name, style: boldTextStyle(size: 18)),
-                      Icon(Icons.arrow_forward_rounded),
-                    ],
-                  ).paddingOnly(left: 16, right: 16),
-                ),
-                8.height,
-                SingleChildScrollView(
-                  padding: EdgeInsets.only(left: 8, right: 8),
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: list.map((e) => PSAppsForYouComponent(e)).toList(),
-                  ),
-                ),
-              ],
-            );
+            // A primeira seção real vira o carrossel de destaque
+            // "Recommended for you", no padrão de banner imersivo da
+            // App Store. As demais viram listas minimalistas com
+            // expansão inline por item.
+            final bool isFeatured = name == nonEmptySections.first;
+            return isFeatured ? _buildFeaturedSection(context, name, list) : _buildListSection(context, name, list);
           }).toList(),
         );
       },
+    );
+  }
+
+  Widget _buildFeaturedSection(BuildContext context, String name, List<PSGameModel> list) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recommended for you',
+          style: boldTextStyle(color: AppleColors.textPrimary, size: 22),
+        ).paddingOnly(left: 16, right: 16),
+        4.height,
+        Text(
+          'Escolhidos para você com base no que você usa',
+          style: secondaryTextStyle(color: AppleColors.textSecondary, size: 13),
+        ).paddingOnly(left: 16, right: 16),
+        16.height,
+        SizedBox(
+          height: 340,
+          child: ListView.builder(
+            padding: EdgeInsets.only(left: 16, right: 4),
+            scrollDirection: Axis.horizontal,
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final item = list[index];
+              return AppleFeaturedCard(
+                data: item,
+                eyebrow: index == 0 ? 'Em destaque' : null,
+                onTap: () {
+                  final sectionModel = PSAppbarModel(name: name, list: list);
+                  PSGameViewAllScreen(data: sectionModel).launch(context);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListSection(BuildContext context, String name, List<PSGameModel> list) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        28.height,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(name, style: boldTextStyle(color: AppleColors.textPrimary, size: 20)),
+            InkWell(
+              onTap: () {
+                final sectionModel = PSAppbarModel(name: name, list: list);
+                PSGameViewAllScreen(data: sectionModel).launch(context);
+              },
+              child: Text('See All', style: primaryTextStyle(color: AppleColors.accentBlue, size: 14)),
+            ),
+          ],
+        ).paddingOnly(left: 16, right: 16),
+        12.height,
+        Column(
+          children: list.map((item) => AppleAppListTile(data: item)).toList(),
+        ),
+      ],
     );
   }
 }
