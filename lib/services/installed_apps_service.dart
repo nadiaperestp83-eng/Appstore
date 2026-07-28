@@ -2,8 +2,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:device_apps/device_apps.dart';
 
-/// Um app real instalado no aparelho (não confundir com [StoreApp], que é
-/// um app disponível pra instalar vindo de uma loja/repositório).
 class InstalledAppInfo {
   final String packageName;
   final String appName;
@@ -27,15 +25,10 @@ class InstalledAppInfo {
     required Application raw,
   }) : _raw = raw;
 
-  /// Abre o app de verdade (usa o método da própria instância retornada
-  /// pelo device_apps, sem precisar de outra chamada estática).
   Future<bool?> open() => _raw.openApp();
 }
 
-/// Lista os apps de verdade instalados no aparelho via `device_apps`.
 class InstalledAppsService {
-  /// Apenas apps com ícone no launcher (mesmo critério da Play Store),
-  /// sem apps de sistema.
   Future<List<InstalledAppInfo>> listLauncherApps() async {
     if (!Platform.isAndroid) return [];
 
@@ -47,8 +40,6 @@ class InstalledAppsService {
         includeAppIcons: true,
       ).timeout(const Duration(seconds: 25));
     } catch (e) {
-      // ignore: avoid_print
-      print('[InstalledAppsService] Falha ao listar apps instalados: $e');
       return [];
     }
 
@@ -60,10 +51,7 @@ class InstalledAppsService {
           if (app.apkFilePath.isNotEmpty) {
             size = await File(app.apkFilePath).length();
           }
-        } catch (_) {
-          // Sem permissão de leitura direta em alguns aparelhos - tudo bem,
-          // só fica sem o tamanho real desse item específico.
-        }
+        } catch (_) {}
 
         result.add(InstalledAppInfo._(
           packageName: app.packageName,
@@ -76,10 +64,7 @@ class InstalledAppsService {
           updatedAt: DateTime.fromMillisecondsSinceEpoch(app.updateTimeMillis),
           raw: app,
         ));
-      } catch (e) {
-        // ignore: avoid_print
-        print('[InstalledAppsService] Item inválido ignorado: $e');
-      }
+      } catch (_) {}
     }
 
     result.sort((a, b) => a.appName.toLowerCase().compareTo(b.appName.toLowerCase()));
