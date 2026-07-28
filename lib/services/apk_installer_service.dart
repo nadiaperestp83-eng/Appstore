@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:device_apps/device_apps.dart';
+import 'package:flutter_device_apps/flutter_device_apps.dart';
 import '../models/store_app.dart';
 
 class ApkInstallerException implements Exception {
@@ -31,17 +31,17 @@ class ApkInstallerService {
   final http.Client _client;
   ApkInstallerService({http.Client? client}) : _client = client ?? http.Client();
 
-  // `DeviceApps.isAppInstalled` (device_apps: ^2.2.0) não compila neste
+  // `FlutterDeviceApps.isAppInstalled` não compila neste
   // projeto - a versão resolvida do pacote não expõe esse método do jeito
   // documentado (erro: "Member not found: 'FlutterDeviceApps.isAppInstalled'").
   // Em vez de depender dele, controlamos localmente quais pacotes foram
-  // instalados/abertos nesta sessão do app. `DeviceApps.openApp` continua
+  // instalados/abertos nesta sessão do app. `FlutterDeviceApps.openApp` continua
   // em uso normalmente (não é o método que está quebrado).
   static final Set<String> _installedThisSession = {};
 
   /// Verifica se o pacote já foi instalado durante esta sessão do app.
   /// Não é uma checagem real do sistema operacional (isso exigiria
-  /// `DeviceApps.isAppInstalled`, que está quebrado nesta versão do
+  /// `FlutterDeviceApps.isAppInstalled`, que está quebrado nesta versão do
   /// pacote) - então, ao reabrir o app do zero, tudo volta a aparecer como
   /// "não instalado" mesmo que já esteja no aparelho. É um trade-off
   /// deliberado para não travar o build por causa de uma API instável.
@@ -59,7 +59,7 @@ class ApkInstallerService {
     if (knownPackageName != null && knownPackageName.isNotEmpty) {
       final already = await isInstalled(knownPackageName);
       if (already) {
-        final opened = await DeviceApps.openApp(knownPackageName);
+        final opened = await FlutterDeviceApps.openApp(knownPackageName);
         if (opened != true) {
           throw ApkInstallerException('Não foi possível abrir "${app.title}" ($knownPackageName).');
         }
