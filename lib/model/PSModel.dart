@@ -32,6 +32,9 @@ class PSGameModel {
   List<PSAppSourceOption>? availableSourceOptions; // todas as fontes, com downloadUrl de cada uma
   String? developer;
   int? downloads;
+  String? description; // descrição longa real (F-Droid/GitHub) - vazia/placeholder na Aptoide
+  List<String>? categories; // categorias reais (F-Droid) - vazia na Aptoide
+  int? versionCode; // usado para comparar com o instalado e saber se há atualização
 
   PSGameModel({
     this.imagesData,
@@ -53,10 +56,34 @@ class PSGameModel {
     this.availableSourceOptions,
     this.developer,
     this.downloads,
+    this.description,
+    this.categories,
+    this.versionCode,
   });
 
   bool get isRealApp => packageName != null;
   bool get hasMultipleSources => (availableSourceOptions?.length ?? 0) > 1;
+
+  /// Descrição pronta pra exibir na tela de detalhes ("About this game").
+  /// Rede de segurança: se a fonte tiver descrição real (F-Droid/GitHub),
+  /// usa ela. Se vier vazia/nula (caso comum na Aptoide, cuja API pública
+  /// não retorna descrição longa), monta um resumo limpo a partir do que
+  /// TEMOS de real (resumo curto, categorias, desenvolvedor) - nunca mostra
+  /// texto genérico do tipo "Sem descrição." pro usuário.
+  String get displayDescription {
+    final desc = description?.trim();
+    if (desc != null && desc.isNotEmpty && desc != 'Sem descrição.') {
+      return desc;
+    }
+    final parts = <String>[];
+    if ((subTitle ?? '').trim().isNotEmpty) parts.add(subTitle!.trim());
+    if ((categories ?? []).isNotEmpty) parts.add('Categoria: ${categories!.join(', ')}.');
+    if ((developer ?? '').trim().isNotEmpty) parts.add('Desenvolvido por ${developer!.trim()}.');
+    if (parts.isEmpty) {
+      return '${(title ?? '').trim().isNotEmpty ? title!.trim() : 'Este app'} não possui uma descrição detalhada disponível nesta fonte.';
+    }
+    return parts.join(' ');
+  }
 }
 
 class PSMyAppsModel {
