@@ -97,6 +97,26 @@ jobs:
             sed -i "s/Scaffold\.of(context)\.showSnackBar/ScaffoldMessenger.of(context)\.showSnackBar/g" lib/screens/PSRatingReviewScreen.dart
           fi
 
+      - name: Garantir flutter_device_apps no pubspec.yaml
+        run: |
+          python3 - << 'EOF'
+          import re
+
+          with open("pubspec.yaml", "r", encoding="utf-8") as f:
+              content = f.read()
+
+          # Remove qualquer menção antiga ao device_apps desatualizado
+          content = re.sub(r'\n\s*device_apps\s*:\s*.*', '', content)
+
+          # Garante que flutter_device_apps está presente nas dependências
+          if 'flutter_device_apps' not in content:
+              content = content.replace('dependencies:', 'dependencies:\n  flutter_device_apps: ^2.0.0')
+
+          with open("pubspec.yaml", "w", encoding="utf-8") as f:
+              f.write(content)
+          print("OK: pubspec.yaml atualizado com flutter_device_apps")
+          EOF
+
       - name: Configurar Java (necessário para build Android)
         uses: actions/setup-java@v4
         with:
