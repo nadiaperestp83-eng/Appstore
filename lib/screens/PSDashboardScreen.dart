@@ -6,7 +6,6 @@ import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/screens/PSAccountScreen.dart';
 import 'package:playstore_flutter/screens/PSAppsGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSAppsScreen.dart';
-import 'package:playstore_flutter/screens/PSBookScreen.dart';
 import 'package:playstore_flutter/screens/PSFreeAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSNavigationScreen.dart';
@@ -37,7 +36,6 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
     PSGamesScreen(),
     PSAppsScreen(),
     PSFreeAppsScreen(),
-    PSBookScreen(),
   ];
 
   @override
@@ -80,14 +78,10 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
                 controller: _tabController,
                 indicatorColor: currentIndex == 0 || currentIndex == 1
                     ? Colors.green
-                    : currentIndex == 2
-                        ? Colors.red[600]
-                        : Colors.blue[900],
+                    : Colors.red[600],
                 labelColor: currentIndex == 0 || currentIndex == 1
                     ? psColorGreen
-                    : currentIndex == 2
-                        ? Colors.red[600]
-                        : Colors.blue[900],
+                    : Colors.red[600],
                 tabs: currentIndex == 0
                     ? getGameList.map((e) {
                         return Tab(text: e.name);
@@ -96,15 +90,9 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
                         ? appsList.map((e) {
                             return Tab(text: e.name);
                           }).toList()
-                        : currentIndex == 2
-                            ? movieList.map((e) {
-                                return Tab(text: e.name);
-                              }).toList()
-                            : currentIndex == 3
-                                ? booksList.map((e) {
-                                    return Tab(text: e.name);
-                                  }).toList()
-                                : [],
+                        : movieList.map((e) {
+                            return Tab(text: e.name);
+                          }).toList(),
               ),
             ).visible(false)
           ],
@@ -292,16 +280,10 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
               activeIcon: Icon(MaterialCommunityIcons.source_repository, size: 25),
               label: 'Apps livres',
               backgroundColor: Colors.white),
-          BottomNavigationBarItem(
-              icon: Icon(AntDesign.book, size: 25),
-              title: Text('Books'),
-              activeIcon: Icon(FontAwesome.bookmark, size: 25))
         ],
         selectedItemColor: currentIndex == 0 || currentIndex == 1
             ? Colors.green
-            : currentIndex == 2
-                ? Colors.red[600]
-                : Colors.blue[900],
+            : Colors.red[600],
         onTap: (index) {
           setState(() {
             currentIndex = index;
@@ -314,9 +296,6 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
             } else if (index == 2) {
               _tabController = TabController(
                   vsync: this, initialIndex: 0, length: movieList.length);
-            } else if (index == 3) {
-              _tabController = TabController(
-                  vsync: this, initialIndex: 0, length: booksList.length);
             }
           });
         },
