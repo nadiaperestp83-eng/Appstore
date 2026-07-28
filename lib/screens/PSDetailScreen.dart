@@ -14,6 +14,7 @@ import 'package:playstore_flutter/screens/PSRatingReviewScreen.dart';
 import 'package:playstore_flutter/screens/PSSimilarGameScreen.dart';
 import 'package:playstore_flutter/utils/AppColors.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
+import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
 import 'package:playstore_flutter/widgets/install_button.dart';
@@ -61,11 +62,13 @@ class PSDetailScreenState extends State<PSDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppleColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppleColors.background,
         elevation: 0,
+        iconTheme: IconThemeData(color: AppleColors.textPrimary),
         actions: [
-          Icon(Icons.search),
+          Icon(Icons.search, color: AppleColors.textPrimary),
           12.width,
           PopupMenuButton(
             onSelected: (dynamic value) {
@@ -75,7 +78,7 @@ class PSDetailScreenState extends State<PSDetailScreen> {
                 PSFlagPropertiesScreen(data7: widget.data).launch(context);
               }
             },
-            icon: Icon(Icons.more_vert_rounded),
+            icon: Icon(Icons.more_vert_rounded, color: AppleColors.textPrimary),
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: 1,
@@ -109,14 +112,17 @@ class PSDetailScreenState extends State<PSDetailScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                commonCacheImageWidget(widget.data!.imgLogo != null ? widget.data!.imgLogo : widget.data!.imgMain, height: 80, width: 80, fit: BoxFit.cover).cornerRadiusWithClipRRect(15),
-                8.width,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: commonCacheImageWidget(widget.data!.imgLogo != null ? widget.data!.imgLogo : widget.data!.imgMain, height: 80, width: 80, fit: BoxFit.cover),
+                ),
+                12.width,
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.data!.title!, style: boldTextStyle(size: 20)),
-                    if (widget.data!.subTitle != null) Text(widget.data!.subTitle!, style: secondaryTextStyle(color: psColorGreen)),
-                    Text("Contains ads In-app purchases", style: secondaryTextStyle()),
+                    Text(widget.data!.title!, style: boldTextStyle(color: AppleColors.textPrimary, size: 20)),
+                    if (widget.data!.subTitle != null) Text(widget.data!.subTitle!, style: secondaryTextStyle(color: AppleColors.accentBlue)),
+                    Text("Contains ads · In-app purchases", style: secondaryTextStyle(color: AppleColors.textSecondary)),
                   ],
                 ).expand(),
               ],
@@ -180,33 +186,20 @@ class PSDetailScreenState extends State<PSDetailScreen> {
               },
               child: Row(
                 children: [
-                  Text('You might also like', style: boldTextStyle()).expand(),
-                  Icon(Icons.arrow_forward_rounded),
+                  Text('You might also like', style: boldTextStyle(color: AppleColors.textPrimary, size: 18)).expand(),
+                  Text('See All', style: primaryTextStyle(color: AppleColors.accentBlue, size: 14)),
                 ],
               ).paddingOnly(left: 16, right: 16),
             ),
             12.height,
             Container(
-              height: 140,
+              height: 150,
               child: ListView.builder(
                 padding: EdgeInsets.only(left: 8, right: 8),
                 shrinkWrap: true,
                 scrollDirection: Axis.horizontal,
                 itemCount: details!.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    width: 150,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        commonCacheImageWidget(details![index].imgLogo, height: 80, width: 150, fit: BoxFit.cover).cornerRadiusWithClipRRect(15),
-                        3.height,
-                        Text(details![index].title!, style: boldTextStyle(size: 13), overflow: TextOverflow.ellipsis, maxLines: 1),
-                        Text(details![index].appSize.toString() + "MB", style: secondaryTextStyle(size: 12)),
-                      ],
-                    ).paddingOnly(left: 8, right: 8),
-                  );
-                },
+                itemBuilder: (context, index) => _relatedAppCard(details![index]),
               ),
             ),
             Row(
@@ -548,26 +541,13 @@ class PSDetailScreenState extends State<PSDetailScreen> {
               ],
             ).visible(visibleItem).paddingOnly(left: 16, right: 16),
             Container(
-              height: 140,
+              height: 150,
               child: ListView.builder(
                 padding: EdgeInsets.only(left: 8, right: 8),
                 shrinkWrap: true,
                 scrollDirection: Axis.horizontal,
                 itemCount: details!.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    width: 150,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        commonCacheImageWidget(details![index].imgLogo, height: 80, width: 150, fit: BoxFit.cover).cornerRadiusWithClipRRect(15),
-                        3.height,
-                        Text(details![index].title!, style: boldTextStyle(size: 13), overflow: TextOverflow.ellipsis, maxLines: 1),
-                        Text(details![index].appSize.toString() + "MB", style: secondaryTextStyle(size: 12)),
-                      ],
-                    ).paddingOnly(left: 8, right: 8),
-                  );
-                },
+                itemBuilder: (context, index) => _relatedAppCard(details![index]),
               ),
             ),
             16.height,
@@ -586,6 +566,27 @@ class PSDetailScreenState extends State<PSDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Card compacto no padrão App Store para os carrosséis "You might also
+  /// like": ícone squircle (12px), título e tamanho, com tipografia no
+  /// padrão [AppleColors].
+  Widget _relatedAppCard(PSGameModel app) {
+    return Container(
+      width: 130,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: commonCacheImageWidget(app.imgLogo ?? app.imgMain, height: 100, width: 130, fit: BoxFit.cover),
+          ),
+          6.height,
+          Text(app.title ?? '', style: boldTextStyle(color: AppleColors.textPrimary, size: 13), overflow: TextOverflow.ellipsis, maxLines: 1),
+          Text('${(app.appSize ?? 0).toStringAsFixed(0)} MB', style: secondaryTextStyle(color: AppleColors.textSecondary, size: 11)),
+        ],
+      ).paddingOnly(left: 8, right: 8),
     );
   }
 }
