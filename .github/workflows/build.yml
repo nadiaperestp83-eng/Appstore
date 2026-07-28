@@ -107,14 +107,15 @@ jobs:
 
           # Remove qualquer menção antiga ao device_apps desatualizado
           content = re.sub(r'\n\s*device_apps\s*:\s*.*', '', content)
+          content = re.sub(r'\n\s*flutter_device_apps\s*:\s*.*', '', content)
 
-          # Garante que flutter_device_apps está presente nas dependências
+          # Garante que flutter_device_apps está presente nas dependências com a versão correta
           if 'flutter_device_apps' not in content:
-              content = content.replace('dependencies:', 'dependencies:\n  flutter_device_apps: ^2.0.0')
+              content = content.replace('dependencies:', 'dependencies:\n  flutter_device_apps: ^0.8.1')
 
           with open("pubspec.yaml", "w", encoding="utf-8") as f:
               f.write(content)
-          print("OK: pubspec.yaml atualizado com flutter_device_apps")
+          print("OK: pubspec.yaml atualizado com flutter_device_apps: ^0.8.1")
           EOF
 
       - name: Configurar Java (necessário para build Android)
