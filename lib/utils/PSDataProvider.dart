@@ -475,9 +475,12 @@ PSGameModel _storeAppToGameModel(StoreApp app) {
     packageName: app.packageName,
     downloadUrl: app.downloadUrl,
     version: app.version,
+    versionCode: app.versionCode,
     preferredRepoLabel: app.repoLabel,
     developer: app.developer,
     downloads: app.downloads,
+    description: app.description,
+    categories: app.categories,
     availableSourceOptions: [
       PSAppSourceOption(
         repoLabel: app.repoLabel,
@@ -515,7 +518,10 @@ PSGameModel _hubAppToGameModel(HubApp hubApp) {
     packageName: hubApp.packageName,
     downloadUrl: preferred.downloadUrl,
     version: preferred.version,
+    versionCode: preferred.versionCode,
     preferredRepoLabel: preferred.repoLabel,
+    description: hubApp.description,
+    categories: hubApp.categories,
     availableSourceOptions: hubApp.availableSources
         .map((s) => PSAppSourceOption(
               repoLabel: s.repoLabel,
@@ -525,4 +531,23 @@ PSGameModel _hubAppToGameModel(HubApp hubApp) {
             ))
         .toList(),
   );
+}
+
+/// Usado pela aba "Updates" (My apps & games) pra saber, de cada app REAL
+/// instalado no aparelho, se existe uma versão mais nova no nosso catálogo
+/// (F-Droid + GitHub). Só conseguimos detectar atualização pra pacotes que
+/// batem exatamente com algo do nosso catálogo - apps vindos da Play Store
+/// ou de outras lojas não têm como ser comparados (não temos acesso ao
+/// catálogo delas), então simplesmente não aparecem como "com atualização".
+Future<Map<String, PSGameModel>> getCatalogByPackageName({
+  List<String> githubRepos = const [],
+  List<String> preferredRepoOrder = const [],
+}) async {
+  final hubApps = await _fetchAndMergeHubApps(githubRepos: githubRepos, preferredRepoOrder: preferredRepoOrder);
+  final map = <String, PSGameModel>{};
+  for (final hub in hubApps) {
+    if (hub.packageName.isEmpty) continue;
+    map[hub.packageName] = _hubAppToGameModel(hub);
+  }
+  return map;
 }
