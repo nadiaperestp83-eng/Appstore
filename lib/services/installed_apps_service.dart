@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:device_apps/device_apps.dart';
+import 'package:flutter_device_apps/flutter_device_apps.dart';
 
 class InstalledAppInfo {
   final String packageName;
@@ -34,10 +34,10 @@ class InstalledAppsService {
 
     List<Application> apps;
     try {
-      apps = await DeviceApps.getInstalledApplications(
-        onlyAppsWithLaunchIntent: true,
-        includeSystemApps: false,
+      apps = await FlutterDeviceApps.getInstalledApplications(
         includeAppIcons: true,
+        includeSystemApps: false,
+        onlyAppsWithLaunchIntent: true,
       ).timeout(const Duration(seconds: 25));
     } catch (e) {
       return [];
