@@ -11,7 +11,7 @@ class InstalledAppInfo {
   final int sizeBytes;
   final DateTime installedAt;
   final DateTime updatedAt;
-  final ApplicationInfo _raw;
+  final AppInfo _raw;
 
   InstalledAppInfo._({
     required this.packageName,
@@ -22,7 +22,7 @@ class InstalledAppInfo {
     required this.sizeBytes,
     required this.installedAt,
     required this.updatedAt,
-    required ApplicationInfo raw,
+    required AppInfo raw,
   }) : _raw = raw;
 
   Future<bool?> open() => FlutterDeviceApps.openApp(packageName);
@@ -32,7 +32,7 @@ class InstalledAppsService {
   Future<List<InstalledAppInfo>> listLauncherApps() async {
     if (!Platform.isAndroid) return [];
 
-    List<ApplicationInfo> apps = [];
+    List<AppInfo> apps = [];
     try {
       final result = await FlutterDeviceApps.listApps(
         includeIcons: true,
