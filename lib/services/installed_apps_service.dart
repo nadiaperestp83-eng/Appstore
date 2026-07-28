@@ -65,12 +65,8 @@ class InstalledAppsService {
           versionCode: app.versionCode ?? 0,
           iconBytes: app.iconBytes,
           sizeBytes: size,
-          installedAt: app.installTime != null 
-              ? DateTime.fromMillisecondsSinceEpoch(app.installTime!) 
-              : DateTime.now(),
-          updatedAt: app.updateTime != null 
-              ? DateTime.fromMillisecondsSinceEpoch(app.updateTime!) 
-              : DateTime.now(),
+          installedAt: DateTime.now(),
+          updatedAt: DateTime.now(),
           raw: app,
         ));
       } catch (_) {}
