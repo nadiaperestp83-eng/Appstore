@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:playstore_flutter/components/apple/AppleAppListTile.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
-import 'package:playstore_flutter/screens/PSDetailScreen.dart';
-import 'package:playstore_flutter/utils/AppWidget.dart';
+import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
 
+/// Resultado combinado: a barra de busca global pesquisa nas DUAS fontes
+/// que o app conhece - Aptoide ("Apps"/"Games") e F-Droid/GitHub ("Apps
+/// livres") - em paralelo, e mostra cada uma em sua própria seção. Antes
+/// só a Aptoide era pesquisada aqui; a aba "Apps livres" perdeu sua busca
+/// interna e ficaria sem nenhuma forma de busca se esta tela continuasse
+/// ignorando aquele catálogo.
 class PSSearchResultsScreen extends StatefulWidget {
   static String tag = '/PSSearchResultsScreen';
   final String query;
@@ -15,152 +21,82 @@ class PSSearchResultsScreen extends StatefulWidget {
   PSSearchResultsScreenState createState() => PSSearchResultsScreenState();
 }
 
+class _CombinedResults {
+  final List<PSGameModel> apps;
+  final List<PSGameModel> freeApps;
+
+  _CombinedResults({required this.apps, required this.freeApps});
+
+  bool get isEmpty => apps.isEmpty && freeApps.isEmpty;
+}
+
 class PSSearchResultsScreenState extends State<PSSearchResultsScreen> {
-  late Future<List<PSGameModel>> _resultsFuture;
+  late final Future<_CombinedResults> _resultsFuture;
 
   @override
   void initState() {
     super.initState();
-    _resultsFuture = searchAptoideApps(widget.query, limit: 30);
+    _resultsFuture = _runCombinedSearch(widget.query);
   }
 
-  String _formatDownloads(int downloads) {
-    if (downloads >= 1000000000) return '${(downloads / 1000000000).toStringAsFixed(1)}B+';
-    if (downloads >= 1000000) return '${(downloads / 1000000).toStringAsFixed(1)}M+';
-    if (downloads >= 1000) return '${(downloads / 1000).toStringAsFixed(1)}K+';
-    return '$downloads+';
+  /// Dispara as duas buscas em paralelo. Se uma das fontes falhar (ex:
+  /// F-Droid fora do ar), a outra ainda aparece normalmente - erro isolado
+  /// numa fonte não derruba a busca inteira.
+  Future<_CombinedResults> _runCombinedSearch(String query) async {
+    final results = await Future.wait([
+      searchAptoideApps(query, limit: 30).catchError((_) => <PSGameModel>[]),
+      searchFreeApps(query, limit: 30).catchError((_) => <PSGameModel>[]),
+    ]);
+    return _CombinedResults(apps: results[0], freeApps: results[1]);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppleColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppleColors.background,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
-        title: Text('Resultados para "${widget.query}"', style: boldTextStyle(color: Colors.black, size: 16)),
+        iconTheme: IconThemeData(color: AppleColors.textPrimary),
+        title: Text(
+          'Resultados para "${widget.query}"',
+          style: boldTextStyle(color: AppleColors.textPrimary, size: 16),
+        ),
       ),
-      body: FutureBuilder<List<PSGameModel>>(
+      body: FutureBuilder<_CombinedResults>(
         future: _resultsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Não foi possível buscar agora.', style: secondaryTextStyle()));
+            return Center(child: Text('Não foi possível buscar agora.', style: secondaryTextStyle(color: AppleColors.textSecondary)));
           }
 
-          final results = snapshot.data ?? [];
-          if (results.isEmpty) {
-            return Center(child: Text('Nenhum resultado para "${widget.query}".', style: secondaryTextStyle()));
+          final combined = snapshot.data ?? _CombinedResults(apps: [], freeApps: []);
+          if (combined.isEmpty) {
+            return Center(child: Text('Nenhum resultado para "${widget.query}".', style: secondaryTextStyle(color: AppleColors.textSecondary)));
           }
 
-          return ListView.separated(
+          return ListView(
             padding: EdgeInsets.symmetric(vertical: 8),
-            itemCount: results.length,
-            separatorBuilder: (_, __) => Divider(height: 1, indent: 16, endIndent: 16),
-            itemBuilder: (context, index) {
-              final app = results[index];
-              return _SearchResultTile(app: app);
-            },
+            children: [
+              if (combined.apps.isNotEmpty) ..._buildSection('Apps', combined.apps),
+              if (combined.freeApps.isNotEmpty) ..._buildSection('Apps livres', combined.freeApps),
+            ],
           );
         },
       ),
     );
   }
-}
 
-class _SearchResultTile extends StatelessWidget {
-  final PSGameModel app;
-
-  const _SearchResultTile({required this.app});
-
-  String _formatDownloads(int downloads) {
-    if (downloads >= 1000000000) return '${(downloads / 1000000000).toStringAsFixed(1)}B+';
-    if (downloads >= 1000000) return '${(downloads / 1000000).toStringAsFixed(1)}M+';
-    if (downloads >= 1000) return '${(downloads / 1000).toStringAsFixed(1)}K+';
-    if (downloads > 0) return '$downloads+';
-    return '';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final rating = app.rating ?? 0;
-    final sizeMb = app.appSize ?? 0;
-    final downloadsText = _formatDownloads(app.downloads ?? 0);
-
-    return InkWell(
-      onTap: () {
-        PSDetailScreen(data: app).launch(context);
-      },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Ícone à esquerda
-            commonCacheImageWidget(app.imgLogo, height: 56, width: 56, fit: BoxFit.cover).cornerRadiusWithClipRRect(12),
-            12.width,
-            // Nome, desenvolvedor, estrelas, tamanho, downloads
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    app.title ?? '',
-                    style: boldTextStyle(size: 15),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  // Desenvolvedor (a API do Aptoide não retorna categoria
-                  // no endpoint de busca, então mostramos o desenvolvedor aqui)
-                  if ((app.developer ?? '').isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.only(top: 2),
-                      child: Text(
-                        app.developer!,
-                        style: secondaryTextStyle(size: 12),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  6.height,
-                  Row(
-                    children: [
-                      if (rating > 0) ...[
-                        Icon(Icons.star, size: 13, color: Colors.black54),
-                        2.width,
-                        Text(rating.toStringAsFixed(1), style: secondaryTextStyle(size: 12)),
-                        10.width,
-                      ],
-                      if (sizeMb > 0) ...[
-                        Text('${sizeMb.toStringAsFixed(1)}MB', style: secondaryTextStyle(size: 12)),
-                        10.width,
-                      ],
-                      if (downloadsText.isNotEmpty)
-                        Expanded(
-                          child: Text(
-                            downloadsText,
-                            style: secondaryTextStyle(size: 12),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            8.width,
-            // Botão de ação lateral (menu expansível, ainda sem ação própria)
-            IconButton(
-              icon: Icon(Icons.expand_more, color: Colors.black54),
-              onPressed: () {
-                PSDetailScreen(data: app).launch(context);
-              },
-            ),
-          ],
-        ),
+  List<Widget> _buildSection(String title, List<PSGameModel> apps) {
+    return [
+      Padding(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Text(title, style: boldTextStyle(color: AppleColors.textPrimary, size: 18)),
       ),
-    );
+      ...apps.map((app) => AppleAppListTile(data: app)),
+    ];
   }
 }
