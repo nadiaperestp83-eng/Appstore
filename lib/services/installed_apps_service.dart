@@ -29,14 +29,10 @@ class InstalledAppInfo {
 
   /// Abre o app de verdade (usa o método da própria instância retornada
   /// pelo device_apps, sem precisar de outra chamada estática).
-  Future<bool> open() => _raw.openApp();
+  Future<bool?> open() => _raw.openApp();
 }
 
 /// Lista os apps de verdade instalados no aparelho via `device_apps`.
-///
-/// Só usamos [DeviceApps.getInstalledApplications] aqui (método original e
-/// central do pacote). Evitamos de propósito `DeviceApps.isAppInstalled`,
-/// que não compila na versão resolvida deste projeto.
 class InstalledAppsService {
   /// Apenas apps com ícone no launcher (mesmo critério da Play Store),
   /// sem apps de sistema.
@@ -61,7 +57,9 @@ class InstalledAppsService {
       try {
         int size = 0;
         try {
-          size = await File(app.apkFilePath).length();
+          if (app.apkFilePath.isNotEmpty) {
+            size = await File(app.apkFilePath).length();
+          }
         } catch (_) {
           // Sem permissão de leitura direta em alguns aparelhos - tudo bem,
           // só fica sem o tamanho real desse item específico.
