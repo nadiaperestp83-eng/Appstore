@@ -5,7 +5,7 @@ import 'package:playstore_flutter/models/store_app.dart';
 import 'package:playstore_flutter/services/apk_installer_service.dart';
 import 'package:playstore_flutter/utils/AppColors.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
-import 'package:playstore_flutter/utils/PSColor.dart';
+import 'package:playstore_flutter/utils/AppleColors.dart';
 
 /// Instância única do serviço de instalação para o app inteiro. Todo botão
 /// de instalar (listagens + tela de detalhes) passa por aqui - é o "Serviço
@@ -181,7 +181,7 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
         );
       case _InstallStatus.installing:
         return _largeShell(
-          color: psColorGreen,
+          color: AppleColors.accentBlue,
           onTap: null,
           child: Text(
             _progress > 0 ? 'Instalando ${(_progress * 100).toStringAsFixed(0)}%' : 'Instalando...',
@@ -192,7 +192,7 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
         return _largeShell(
           color: appDividerColor,
           onTap: _handleTap,
-          child: Text('Abrir', style: primaryTextStyle(color: psColorGreen)),
+          child: Text('Abrir', style: primaryTextStyle(color: AppleColors.accentBlue)),
         );
       case _InstallStatus.permissionRequired:
         return _largeShell(
@@ -208,7 +208,7 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
         );
       case _InstallStatus.notInstalled:
         return _largeShell(
-          color: psColorGreen,
+          color: AppleColors.accentBlue,
           onTap: _handleTap,
           child: Text('Instalar', style: primaryTextStyle(color: Colors.white)),
         );
@@ -234,11 +234,11 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
       case _InstallStatus.installing:
         return _smallShell(
           color: Colors.transparent,
-          borderColor: psColorGreen,
+          borderColor: AppleColors.accentBlue,
           onTap: null,
           child: Text(
             _progress > 0 ? '${(_progress * 100).toStringAsFixed(0)}%' : '...',
-            style: secondaryTextStyle(color: psColorGreen, size: 11),
+            style: secondaryTextStyle(color: AppleColors.accentBlue, size: 11),
           ),
         );
       case _InstallStatus.installed:
@@ -264,8 +264,8 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
         );
       case _InstallStatus.notInstalled:
         return _smallShell(
-          color: psColorGreen,
-          borderColor: psColorGreen,
+          color: AppleColors.accentBlue,
+          borderColor: AppleColors.accentBlue,
           onTap: _handleTap,
           child: Text('Instalar', style: secondaryTextStyle(color: Colors.white, size: 11)),
         );
