@@ -51,21 +51,26 @@ class InstalledAppsService {
     for (final app in apps) {
       try {
         int size = 0;
-        try {
-          if (app.apkPath.isNotEmpty) {
-            size = await File(app.apkPath).length();
-          }
-        } catch (_) {}
+        final apkPath = app.apkPath;
+        if (apkPath != null && apkPath.isNotEmpty) {
+          try {
+            size = await File(apkPath).length();
+          } catch (_) {}
+        }
 
         listResult.add(InstalledAppInfo._(
-          packageName: app.packageName,
-          appName: app.appName,
+          packageName: app.packageName ?? '',
+          appName: app.appName ?? '',
           versionName: app.versionName ?? '',
-          versionCode: app.versionCode,
+          versionCode: app.versionCode ?? 0,
           iconBytes: app.iconBytes,
           sizeBytes: size,
-          installedAt: DateTime.fromMillisecondsSinceEpoch(app.installTimeMillis),
-          updatedAt: DateTime.fromMillisecondsSinceEpoch(app.updateTimeMillis),
+          installedAt: app.installTime != null 
+              ? DateTime.fromMillisecondsSinceEpoch(app.installTime!) 
+              : DateTime.now(),
+          updatedAt: app.updateTime != null 
+              ? DateTime.fromMillisecondsSinceEpoch(app.updateTime!) 
+              : DateTime.now(),
           raw: app,
         ));
       } catch (_) {}
