@@ -506,6 +506,36 @@ Future<List<PSGameModel>> getRealAppsList({
   return hubApps.map(_hubAppToGameModel).toList();
 }
 
+/// Busca por texto dentro do catálogo de "Apps livres" (F-Droid + GitHub).
+///
+/// Usada pela barra de busca global (ver [AppScreen] em
+/// PSNavigationScreen.dart) para que o texto digitado no topo filtre tanto
+/// os apps "principais" (Aptoide, via [searchAptoideApps]) quanto os apps
+/// livres - antes só a Aptoide era pesquisada e a aba "Apps livres" não
+/// aparecia em nenhuma busca depois que a barra interna dela foi removida.
+///
+/// F-Droid/GitHub não expõem um endpoint de busca por texto como a Aptoide,
+/// então a filtragem é feita em cima da lista completa já buscada por
+/// [getRealAppsList] - mesmo critério (título/descrição) que a aba "Apps
+/// livres" usava na sua própria busca antes de ser unificada com a de cima.
+Future<List<PSGameModel>> searchFreeApps(
+  String query, {
+  int limit = 30,
+  List<String> githubRepos = const [],
+}) async {
+  final q = query.trim().toLowerCase();
+  if (q.isEmpty) return [];
+
+  final allApps = await getRealAppsList(githubRepos: githubRepos);
+  final matches = allApps.where((app) {
+    final title = (app.title ?? '').toLowerCase();
+    final subtitle = (app.subTitle ?? '').toLowerCase();
+    return title.contains(q) || subtitle.contains(q);
+  }).toList();
+
+  return matches.take(limit).toList();
+}
+
 PSGameModel _hubAppToGameModel(HubApp hubApp) {
   final preferred = hubApp.preferredSource;
   return PSGameModel(
