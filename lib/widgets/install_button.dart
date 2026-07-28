@@ -13,6 +13,38 @@ import 'package:playstore_flutter/utils/PSColor.dart';
 /// acionar o instalador nativo, nenhuma tela reimplementa essa lógica.
 final ApkInstallerService _sharedInstaller = ApkInstallerService();
 
+/// Converte um [PSGameModel] real (com packageName/downloadUrl) pro
+/// [StoreApp] que o [ApkInstallerService] espera. Retorna null se o item
+/// não tiver dado real o bastante pra instalar (ex: mock de Movies/Books
+/// ainda não migrado).
+StoreApp? storeAppFromGameModel(PSGameModel data) {
+  final packageName = data.packageName;
+  final downloadUrl = data.downloadUrl;
+  if (packageName == null || packageName.isEmpty || downloadUrl == null || downloadUrl.isEmpty) {
+    return null;
+  }
+  return StoreApp(
+    id: packageName,
+    title: data.title ?? '',
+    version: data.version ?? '',
+    iconUrl: data.imgLogo ?? data.imgMain ?? '',
+    downloadUrl: downloadUrl,
+    description: data.subTitle ?? '',
+    source: (data.preferredRepoLabel ?? '').toLowerCase(),
+    packageName: packageName,
+    repoLabel: data.preferredRepoLabel ?? '',
+  );
+}
+
+/// Dispara a instalação de um [PSGameModel] fora de um [InstallButton] (ex:
+/// "Update all" na aba Updates, que precisa iniciar a primeira atualização
+/// programaticamente). Passa pelo mesmo Serviço Central de instalação.
+Future<void> triggerInstall(PSGameModel app, {void Function(double progress)? onProgress}) async {
+  final storeApp = storeAppFromGameModel(app);
+  if (storeApp == null) return;
+  await _sharedInstaller.installOrOpen(storeApp, onProgress: onProgress);
+}
+
 enum InstallButtonSize { small, large }
 
 enum _InstallStatus { checking, notInstalled, installing, installed, error, permissionRequired, unavailable }
@@ -44,25 +76,7 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
   double _progress = 0;
   String? _errorMessage;
 
-  StoreApp? get _storeApp {
-    final data = widget.app;
-    final packageName = data.packageName;
-    final downloadUrl = data.downloadUrl;
-    if (packageName == null || packageName.isEmpty || downloadUrl == null || downloadUrl.isEmpty) {
-      return null;
-    }
-    return StoreApp(
-      id: packageName,
-      title: data.title ?? '',
-      version: data.version ?? '',
-      iconUrl: data.imgLogo ?? data.imgMain ?? '',
-      downloadUrl: downloadUrl,
-      description: data.subTitle ?? '',
-      source: (data.preferredRepoLabel ?? '').toLowerCase(),
-      packageName: packageName,
-      repoLabel: data.preferredRepoLabel ?? '',
-    );
-  }
+  StoreApp? get _storeApp => storeAppFromGameModel(widget.app);
 
   @override
   void initState() {
