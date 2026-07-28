@@ -97,25 +97,35 @@ jobs:
             sed -i "s/Scaffold\.of(context)\.showSnackBar/ScaffoldMessenger.of(context)\.showSnackBar/g" lib/screens/PSRatingReviewScreen.dart
           fi
 
-      - name: Garantir flutter_device_apps no pubspec.yaml
+      - name: Garantir flutter_device_apps no pubspec.yaml e atualizar código
         run: |
           python3 - << 'EOF'
           import re
+          import glob
 
           with open("pubspec.yaml", "r", encoding="utf-8") as f:
               content = f.read()
 
-          # Remove qualquer menção antiga ao device_apps desatualizado
           content = re.sub(r'\n\s*device_apps\s*:\s*.*', '', content)
           content = re.sub(r'\n\s*flutter_device_apps\s*:\s*.*', '', content)
 
-          # Garante que flutter_device_apps está presente nas dependências com a versão correta
           if 'flutter_device_apps' not in content:
               content = content.replace('dependencies:', 'dependencies:\n  flutter_device_apps: ^0.8.1')
 
           with open("pubspec.yaml", "w", encoding="utf-8") as f:
               f.write(content)
           print("OK: pubspec.yaml atualizado com flutter_device_apps: ^0.8.1")
+
+          # Atualizar os imports nos arquivos de serviço para o novo pacote
+          for filepath in glob.glob("lib/**/*.dart", recursive=True):
+              with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                  code = f.read()
+
+              if "package:device_apps/device_apps.dart" in code:
+                  code = code.replace("package:device_apps/device_apps.dart", "package:flutter_device_apps/flutter_device_apps.dart")
+                  with open(filepath, "w", encoding="utf-8") as f:
+                      f.write(code)
+                  print(f"OK: Import atualizado em {filepath}")
           EOF
 
       - name: Configurar Java (necessário para build Android)
