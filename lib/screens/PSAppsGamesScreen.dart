@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/screens/PSInstalledFragment.dart';
-import 'package:playstore_flutter/screens/PSLibraryFragment.dart';
 import 'package:playstore_flutter/screens/PSUpdatesFragments.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 
@@ -31,7 +30,7 @@ class PSAppsGamesScreenState extends State<PSAppsGamesScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: Text('My apps & games', style: boldTextStyle()),
@@ -53,7 +52,6 @@ class PSAppsGamesScreenState extends State<PSAppsGamesScreen> {
                   tabs: [
                     Padding(padding: EdgeInsets.only(bottom: 12), child: Text('Updates')),
                     Padding(padding: EdgeInsets.only(bottom: 12), child: Text('Installed')),
-                    Padding(padding: EdgeInsets.only(bottom: 12), child: Text('Library')),
                   ],
                 ),
               ),
@@ -64,7 +62,6 @@ class PSAppsGamesScreenState extends State<PSAppsGamesScreen> {
           children: [
             PSUpdatesFragments(),
             PSInstalledFragment(),
-            PSLibraryFragment(),
           ],
         ),
       ),
