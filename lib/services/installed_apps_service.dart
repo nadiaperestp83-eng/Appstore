@@ -11,7 +11,7 @@ class InstalledAppInfo {
   final int sizeBytes;
   final DateTime installedAt;
   final DateTime updatedAt;
-  final dynamic _raw;
+  final ApplicationInfo _raw;
 
   InstalledAppInfo._({
     required this.packageName,
@@ -22,7 +22,7 @@ class InstalledAppInfo {
     required this.sizeBytes,
     required this.installedAt,
     required this.updatedAt,
-    required dynamic raw,
+    required ApplicationInfo raw,
   }) : _raw = raw;
 
   Future<bool?> open() => FlutterDeviceApps.openApp(packageName);
@@ -32,15 +32,15 @@ class InstalledAppsService {
   Future<List<InstalledAppInfo>> listLauncherApps() async {
     if (!Platform.isAndroid) return [];
 
-    List<dynamic> apps = [];
+    List<ApplicationInfo> apps = [];
     try {
-      final result = await FlutterDeviceApps.getInstalledApps(
-        includeAppIcons: true,
-        includeSystemApps: false,
-        onlyAppsWithLaunchIntent: true,
+      final result = await FlutterDeviceApps.listApps(
+        includeIcons: true,
+        includeSystem: false,
+        onlyLaunchable: true,
       ).timeout(const Duration(seconds: 25));
       
-      if (result != null) {
+      if (result.isNotEmpty) {
         apps = result;
       }
     } catch (e) {
@@ -51,22 +51,21 @@ class InstalledAppsService {
     for (final app in apps) {
       try {
         int size = 0;
-        final apkPath = app['apkFilePath'] ?? '';
         try {
-          if (apkPath.isNotEmpty) {
-            size = await File(apkPath).length();
+          if (app.apkPath.isNotEmpty) {
+            size = await File(app.apkPath).length();
           }
         } catch (_) {}
 
         listResult.add(InstalledAppInfo._(
-          packageName: app['packageName'] ?? '',
-          appName: app['appName'] ?? '',
-          versionName: app['versionName'] ?? '',
-          versionCode: app['versionCode'] ?? 0,
-          iconBytes: app['appIcon'] != null ? Uint8List.fromList(List<int>.from(app['appIcon'])) : null,
+          packageName: app.packageName,
+          appName: app.appName,
+          versionName: app.versionName ?? '',
+          versionCode: app.versionCode,
+          iconBytes: app.iconBytes,
           sizeBytes: size,
-          installedAt: DateTime.fromMillisecondsSinceEpoch(app['installTimeMillis'] ?? 0),
-          updatedAt: DateTime.fromMillisecondsSinceEpoch(app['updateTimeMillis'] ?? 0),
+          installedAt: DateTime.fromMillisecondsSinceEpoch(app.installTimeMillis),
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(app.updateTimeMillis),
           raw: app,
         ));
       } catch (_) {}
