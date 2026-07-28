@@ -35,8 +35,6 @@ class PSDetailScreenState extends State<PSDetailScreen> {
   bool iconSelect = false;
   var randomNumber = Random();
 
-  List<String> list2 = ['Puzzle', 'Offline', 'Single Player'];
-
   List<PSReviews> getReviewsList = getReviewList();
 
   var details = appsList[0].categories![0].list;
@@ -221,25 +219,26 @@ class PSDetailScreenState extends State<PSDetailScreen> {
               PSAboutGameScreen(data: widget.data).launch(context);
             }),
             12.height,
-            Text('Swipe  and place the tiles orderly. Challenge the number maze quickly.').paddingOnly(left: 16, right: 16),
+            Text(widget.data!.displayDescription, maxLines: 3, overflow: TextOverflow.ellipsis).paddingOnly(left: 16, right: 16),
             18.height,
-            Container(
-              height: 30,
-              child: ListView.builder(
-                padding: EdgeInsets.only(left: 8, right: 8),
-                scrollDirection: Axis.horizontal,
-                shrinkWrap: true,
-                itemCount: list2.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    height: 30,
-                    padding: EdgeInsets.only(left: 16, right: 16),
-                    decoration: boxDecoration(color: grey, radius: 16),
-                    child: Text(list2[index]).center(),
-                  ).paddingOnly(left: 8);
-                },
+            if ((widget.data!.categories ?? []).isNotEmpty)
+              Container(
+                height: 30,
+                child: ListView.builder(
+                  padding: EdgeInsets.only(left: 8, right: 8),
+                  scrollDirection: Axis.horizontal,
+                  shrinkWrap: true,
+                  itemCount: widget.data!.categories!.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      height: 30,
+                      padding: EdgeInsets.only(left: 16, right: 16),
+                      decoration: boxDecoration(color: grey, radius: 16),
+                      child: Text(widget.data!.categories![index]).center(),
+                    ).paddingOnly(left: 8);
+                  },
+                ),
               ),
-            ),
             18.height,
             Text('Rate this app', style: boldTextStyle()).paddingOnly(left: 16, right: 16),
             Text('Tell other what you think').paddingOnly(left: 16, right: 16),
