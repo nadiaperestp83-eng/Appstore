@@ -97,36 +97,6 @@ jobs:
             sed -i "s/Scaffold\.of(context)\.showSnackBar/ScaffoldMessenger.of(context)\.showSnackBar/g" lib/screens/PSRatingReviewScreen.dart
           fi
 
-      - name: Substituir device_apps por flutter_device_apps no Pubspec e Código
-        run: |
-          python3 - << 'EOF'
-          import glob
-          import re
-
-          # 1. Atualizar pubspec.yaml trocando o plugin antigo pelo moderno sem travar versão obsoleta
-          with open("pubspec.yaml", "r", encoding="utf-8") as f:
-              pubspec = f.read()
-
-          # Substitui qualquer linha contendo device_apps por flutter_device_apps
-          pubspec = re.sub(r'device_apps\s*:\s*.*', 'flutter_device_apps: any', pubspec)
-          
-          with open("pubspec.yaml", "w", encoding="utf-8") as f:
-              f.write(pubspec)
-          print("OK: pubspec.yaml atualizado para flutter_device_apps: any")
-
-          # 2. Atualizar imports e chamadas nos arquivos Dart do projeto
-          for filepath in glob.glob("lib/**/*.dart", recursive=True):
-              with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-                  code = f.read()
-
-              if "package:device_apps" in code:
-                  code = code.replace("package:device_apps/device_apps.dart", "package:flutter_device_apps/flutter_device_apps.dart")
-                  code = code.replace("DeviceApps.", "FlutterDeviceApps.")
-                  with open(filepath, "w", encoding="utf-8") as f:
-                      f.write(code)
-                  print(f"OK: Atualizadas chamadas em {filepath}")
-          EOF
-
       - name: Configurar Java (necessário para build Android)
         uses: actions/setup-java@v4
         with:
