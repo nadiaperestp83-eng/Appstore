@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/components/apple/AppleAppListTile.dart';
+import 'package:playstore_flutter/components/apple/AppleGroupedCard.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
@@ -53,7 +54,7 @@ class PSSearchResultsScreenState extends State<PSSearchResultsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppleColors.background,
+      backgroundColor: AppleColors.backgroundSecondary,
       appBar: AppBar(
         backgroundColor: AppleColors.background,
         elevation: 0,
@@ -96,7 +97,10 @@ class PSSearchResultsScreenState extends State<PSSearchResultsScreen> {
         padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
         child: Text(title, style: boldTextStyle(color: AppleColors.textPrimary, size: 18)),
       ),
-      ...apps.map((app) => AppleAppListTile(data: app)),
+      AppleGroupedCard(
+        dividerIndent: 84,
+        children: apps.map((app) => AppleAppListTile(data: app)).toList(),
+      ),
     ];
   }
 }
