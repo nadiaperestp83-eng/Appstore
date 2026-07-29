@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:playstore_flutter/components/apple/AppleProfileMenuSheet.dart';
 import 'package:playstore_flutter/screens/PSSearchResultsScreen.dart';
-import 'package:playstore_flutter/screens/PSSettingScreen.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSSearchHistoryUtil.dart';
 
@@ -13,8 +13,8 @@ import 'package:playstore_flutter/utils/PSSearchHistoryUtil.dart';
 ///
 /// Substitui a antiga barra de busca flutuante gigante que ficava aqui -
 /// agora a busca abre em cima da tela (via [showSearch]/[_AppSearchDelegate])
-/// só quando o usuário toca na lupa, e o ícone de perfil deu lugar a uma
-/// engrenagem que abre [PSSettingScreen] diretamente.
+/// só quando o usuário toca na lupa, e a engrenagem abre o menu estilo
+/// iOS ([showAppleProfileMenuSheet]) que era o antigo Drawer/hambúrguer.
 class AppScreen extends StatefulWidget {
   static String tag = '/AppScreen';
 
@@ -51,11 +51,13 @@ class AppScreenState extends State<AppScreen> {
             icon: Icon(Icons.keyboard_voice_outlined, color: AppleColors.textSecondary),
             onPressed: () {},
           ),
-          // Engrenagem no lugar do antigo avatar de perfil: abre a tela de
-          // configurações direto, sem passar pelo bottom sheet de perfil.
+          // Engrenagem no lugar do antigo avatar de perfil: abre o mesmo
+          // menu que o antigo hambúrguer abria (agora um bottom sheet
+          // estilo iOS - ver AppleProfileMenuSheet.dart), não a tela de
+          // Settings direto. "Settings" é só um dos itens dentro do menu.
           IconButton(
             icon: Icon(Icons.settings, color: AppleColors.textSecondary),
-            onPressed: () => PSSettingScreen().launch(context),
+            onPressed: () => showAppleProfileMenuSheet(context),
           ),
         ],
       ),
