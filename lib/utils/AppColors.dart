@@ -27,4 +27,7 @@ class AppleColors {
 
   /// Divisor sutil entre linhas de lista.
   static const Color divider = Color(0xFFE5E5EA);
+
+  /// Compatibilidade com telas legadas (ex: PSBookScreen).
+  static const Color appDividerColor = Color(0xFFE5E5EA);
 }
