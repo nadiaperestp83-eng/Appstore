@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/components/apple/AppleAppListTile.dart';
+import 'package:playstore_flutter/components/apple/AppleGroupedCard.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
@@ -72,7 +73,7 @@ class PSFreeAppsScreenState extends State<PSFreeAppsScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppleColors.background,
+      color: AppleColors.backgroundSecondary,
       child: SafeArea(
         child: FutureBuilder<List<PSGameModel>>(
           future: _appsFuture,
@@ -94,12 +95,18 @@ class PSFreeAppsScreenState extends State<PSFreeAppsScreen> {
             final visible = apps.take(_visibleCount).toList();
             final hasMore = _visibleCount < apps.length;
 
+            // Agrupada em cards brancos de até _pageSize itens (em vez de
+            // um único card gigante) - assim cada lote carregado pelo
+            // scroll infinito já chega "fechado" visualmente, sem precisar
+            // recalcular divisores do card inteiro a cada novo lote.
+            final chunkCount = (visible.length / _pageSize).ceil();
+
             return ListView.builder(
               controller: _scrollController,
               padding: EdgeInsets.symmetric(vertical: 8),
-              itemCount: visible.length + (hasMore ? 1 : 0),
+              itemCount: chunkCount + (hasMore ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index >= visible.length) {
+                if (index >= chunkCount) {
                   // Sentinela no fim da lista: mostra que ainda há mais
                   // itens (também funciona como fallback caso o usuário
                   // chegue ao fim sem disparar o scroll listener).
@@ -110,10 +117,21 @@ class PSFreeAppsScreenState extends State<PSFreeAppsScreen> {
                     ),
                   );
                 }
+
+                final start = index * _pageSize;
+                final end = (start + _pageSize).clamp(0, visible.length);
+                final chunk = visible.sublist(start, end);
+
                 // Mesmo tile Apple-style (ícone squircle, expansão inline ao
                 // toque) usado nas abas Apps e Games - nada de navegação pra
                 // tela separada aqui também.
-                return AppleAppListTile(data: visible[index]);
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: AppleGroupedCard(
+                    dividerIndent: 84,
+                    children: chunk.map((app) => AppleAppListTile(data: app)).toList(),
+                  ),
+                );
               },
             );
           },
