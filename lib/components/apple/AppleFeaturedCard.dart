@@ -27,67 +27,72 @@ class AppleFeaturedCard extends StatelessWidget {
         width: 300,
         height: 340,
         margin: EdgeInsets.only(right: 16),
+        padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
+          color: AppleColors.background,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppleColors.divider, width: 0.6),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: Offset(0, 6)),
+            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: Offset(0, 6)),
           ],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            commonCacheImageWidget(data.imgMain, fit: BoxFit.cover),
-            // Gradiente sutil só na base, para o texto ficar legível sem
-            // esconder a arte do app.
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                height: 130,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.55)],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              commonCacheImageWidget(data.imgMain, fit: BoxFit.cover),
+              // Gradiente sutil só na base, para o texto ficar legível sem
+              // esconder a arte do app.
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: 130,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.55)],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if ((eyebrow ?? '').isNotEmpty) ...[
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if ((eyebrow ?? '').isNotEmpty) ...[
+                      Text(
+                        eyebrow!.toUpperCase(),
+                        style: boldTextStyle(color: Colors.white, size: 12),
+                      ),
+                      6.height,
+                    ],
                     Text(
-                      eyebrow!.toUpperCase(),
-                      style: boldTextStyle(color: Colors.white, size: 12),
-                    ),
-                    6.height,
-                  ],
-                  Text(
-                    data.title ?? '',
-                    style: boldTextStyle(color: Colors.white, size: 22),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  4.height,
-                  if ((data.subTitle ?? '').isNotEmpty)
-                    Text(
-                      data.subTitle!,
-                      style: secondaryTextStyle(color: Colors.white.withOpacity(0.9), size: 14),
-                      maxLines: 2,
+                      data.title ?? '',
+                      style: boldTextStyle(color: Colors.white, size: 22),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                ],
+                    4.height,
+                    if ((data.subTitle ?? '').isNotEmpty)
+                      Text(
+                        data.subTitle!,
+                        style: secondaryTextStyle(color: Colors.white.withOpacity(0.9), size: 14),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
