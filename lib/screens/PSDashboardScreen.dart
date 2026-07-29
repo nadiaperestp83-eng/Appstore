@@ -7,6 +7,7 @@ import 'package:playstore_flutter/screens/PSAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSFreeAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSNavigationScreen.dart';
+import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 
 class PSDashboardScreen extends StatefulWidget {
@@ -54,6 +55,7 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppleColors.backgroundSecondary,
       appBar: PreferredSize(
         preferredSize: Size(context.width(), 140),
         child: Column(
