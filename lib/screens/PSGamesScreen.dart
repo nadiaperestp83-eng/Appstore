@@ -3,6 +3,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/components/PSTopChartsFragment.dart';
 import 'package:playstore_flutter/components/apple/AppleAppListTile.dart';
 import 'package:playstore_flutter/components/apple/AppleFeaturedCard.dart';
+import 'package:playstore_flutter/components/apple/AppleGroupedCard.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSGameViewAllScreen.dart';
@@ -62,7 +63,7 @@ class PSGamesScreenState extends State<PSGamesScreen> with TickerProviderStateMi
   Widget build(BuildContext context) {
     return Container(
       height: context.height(),
-      color: AppleColors.background,
+      color: AppleColors.backgroundSecondary,
       padding: EdgeInsets.only(top: 8),
       child: SingleChildScrollView(
         child: Column(
@@ -70,6 +71,7 @@ class PSGamesScreenState extends State<PSGamesScreen> with TickerProviderStateMi
           children: [
             Container(
               height: 46,
+              color: AppleColors.background,
               child: Container(
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppleColors.divider, width: 1))),
@@ -220,7 +222,8 @@ class _ForYouSections extends StatelessWidget {
           ],
         ).paddingOnly(left: 16, right: 16),
         12.height,
-        Column(
+        AppleGroupedCard(
+          dividerIndent: 84,
           children: list.map((item) => AppleAppListTile(data: item)).toList(),
         ),
       ],
