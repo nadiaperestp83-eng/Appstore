@@ -19,6 +19,12 @@ const appLanguagePref = "appLanguagePref";
 /// Histórico local de buscas (JSON), usado por Settings > Clear Local Search.
 const searchHistoryPref = "searchHistoryPref";
 
+/// true depois que o usuário passa pela tela de Boas-vindas + Permissões
+/// pela primeira vez (ver PSSplashScreen/PSWelcomeScreen/PSPermissionsScreen).
+/// Enquanto for false, todo "abrir app" volta pra esse fluxo de onboarding
+/// em vez de ir direto pro Dashboard.
+const hasCompletedOnboardingPref = "hasCompletedOnboardingPref";
+
 const maxItemCount = 20;
 
 const baseUrl = "https://assets.iqonic.design/old-themeforest-images/Mimik";
