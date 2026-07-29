@@ -210,7 +210,7 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
         return _largeShell(
           color: AppleColors.accentBlue,
           onTap: _handleTap,
-          child: Text('Instalar', style: primaryTextStyle(color: Colors.white)),
+          child: Text('Install', style: primaryTextStyle(color: Colors.white)),
         );
     }
   }
@@ -267,7 +267,7 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
           color: AppleColors.accentBlue,
           borderColor: AppleColors.accentBlue,
           onTap: _handleTap,
-          child: Text('Instalar', style: secondaryTextStyle(color: Colors.white, size: 11)),
+          child: Text('Install', style: secondaryTextStyle(color: Colors.white, size: 11)),
         );
     }
   }
