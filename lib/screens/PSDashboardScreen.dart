@@ -3,18 +3,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
-import 'package:playstore_flutter/screens/PSAccountScreen.dart';
 import 'package:playstore_flutter/screens/PSAppsGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSFreeAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSNavigationScreen.dart';
 import 'package:playstore_flutter/screens/PSNotificationScreen.dart';
-import 'package:playstore_flutter/screens/PSPaymentScreen.dart';
 import 'package:playstore_flutter/screens/PSPlayProtectScreen.dart';
 import 'package:playstore_flutter/screens/PSSettingScreen.dart';
-import 'package:playstore_flutter/screens/PSSubscriptionsScreen.dart';
-import 'package:playstore_flutter/screens/PSWishListScreen.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 import 'package:playstore_flutter/utils/PSImages.dart';
 
@@ -146,55 +142,7 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
                           .paddingOnly(left: 8),
                   title: Text('Notifications', style: primaryTextStyle()),
                 ),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  onTap: () {
-                    finish(context);
-                    PSSubscriptionsScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading:
-                      Icon(Feather.refresh_cw, size: 20, color: Colors.black54)
-                          .paddingOnly(left: 8),
-                  title: Text('Subscriptions', style: primaryTextStyle()),
-                ),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  onTap: () {
-                    finish(context);
-                    PSWishListScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(MaterialCommunityIcons.bookmark_plus_outline,
-                          size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('WishList', style: primaryTextStyle()),
-                ),
                 Divider(thickness: 1),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  onTap: () {
-                    finish(context);
-                    PSAccountScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(MaterialCommunityIcons.account_outline,
-                          size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('Accounts', style: primaryTextStyle()),
-                ),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  onTap: () {
-                    finish(context);
-                    PSPaymentScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(MaterialIcons.payment,
-                          size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('Payment methods', style: primaryTextStyle()),
-                ),
                 ListTile(
                   visualDensity: VisualDensity(vertical: -2),
                   onTap: () {
@@ -220,23 +168,6 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
                 ),
                 Divider(thickness: 1),
                 ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.local_movies_outlined,
-                          size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('Open Movies app', style: primaryTextStyle()),
-                  trailing: Icon(Icons.exit_to_app_outlined),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(AntDesign.book, size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('Open Books app', style: primaryTextStyle()),
-                  trailing: Icon(Icons.exit_to_app_outlined),
-                ),
-                Divider(thickness: 1),
-                ListTile(
                   visualDensity: VisualDensity(horizontal: -4, vertical: -2),
                   contentPadding: EdgeInsets.only(left: 8),
                   title: Text('Redeem', style: boldTextStyle(size: 18)),
@@ -245,11 +176,6 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
                   visualDensity: VisualDensity(horizontal: -4, vertical: -2),
                   contentPadding: EdgeInsets.only(left: 8),
                   title: Text('Help & feedback', style: primaryTextStyle()),
-                ),
-                ListTile(
-                  visualDensity: VisualDensity(horizontal: -4, vertical: -4),
-                  contentPadding: EdgeInsets.only(left: 8),
-                  title: Text('Parent Guide', style: primaryTextStyle()),
                 ),
                 ListTile(
                   visualDensity: VisualDensity(horizontal: -4, vertical: -4),
