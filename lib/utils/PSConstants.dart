@@ -9,6 +9,16 @@ const review1 =
 
 const isDarkModeOnPref = "isDarkModeOnPref";
 
+/// 'light', 'dark' ou 'system' - controla como [isDarkModeOnPref] deve ser
+/// resolvido na próxima abertura do app (ver main.dart).
+const themeModePref = "themeModePref";
+
+/// Código do idioma selecionado em Settings > App Language (ex: 'en', 'pt').
+const appLanguagePref = "appLanguagePref";
+
+/// Histórico local de buscas (JSON), usado por Settings > Clear Local Search.
+const searchHistoryPref = "searchHistoryPref";
+
 const maxItemCount = 20;
 
 const baseUrl = "https://assets.iqonic.design/old-themeforest-images/Mimik";
