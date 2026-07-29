@@ -6,6 +6,9 @@ import 'package:playstore_flutter/utils/AppLanguages.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSConstants.dart';
 import 'package:playstore_flutter/utils/PSSearchHistoryUtil.dart';
+import 'package:playstore_flutter/utils/AppColors.dart'; // (Ajuste o caminho da pasta utils se o seu AppColors estiver em outro lugar)
+
+
 
 /// Aba Settings, no padrão visual "grouped list" do iOS: rótulo de seção
 /// em maiúsculas sobre um card branco arredondado, linhas separadas por
