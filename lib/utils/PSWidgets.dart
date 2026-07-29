@@ -5,6 +5,7 @@ import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/screens/PSAppsCategoriesScreen.dart';
 import 'package:playstore_flutter/screens/PSMoviesGenresScreen.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
+import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
 
 Widget gameDetail({String? img, required String txtPlayType, required String txtAction, required String txtRating, required String txtSize}) {
@@ -55,28 +56,53 @@ class CategoriesList extends StatefulWidget {
 class _CategoriesListState extends State<CategoriesList> {
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? Colors.white.withOpacity(0.08) : AppleColors.backgroundSecondary.withOpacity(0.6);
+    final textColor = isDark ? Colors.white : AppleColors.textPrimary;
+    final iconColor = widget.isMovies ? psColorRed : AppleColors.accentBlue;
+
+    return GridView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: widget.data!.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 2.3,
+      ),
       itemBuilder: (context, index) {
-        return GestureDetector(
+        final item = widget.data![index];
+        return InkWell(
+          borderRadius: BorderRadius.circular(20),
           onTap: () {
             if (widget.isMovies) {
-              PSMoviesGenresScreen(title: widget.data![index].name).launch(context);
+              PSMoviesGenresScreen(title: item.name).launch(context);
             } else {
-              PSAppsCategoriesScreen(data: widget.data![index]).launch(context);
+              PSAppsCategoriesScreen(data: item).launch(context);
             }
           },
           child: Container(
-            padding: EdgeInsets.only(left: 16, right: 16),
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Row(
               children: [
-                Icon(widget.data![index].icon, color: widget.isMovies ? psColorRed : psColorGreen),
-                24.width,
-                Text(widget.data![index].name!, style: primaryTextStyle()).expand(),
+                Icon(item.icon, color: iconColor, size: 22),
+                10.width,
+                Expanded(
+                  child: Text(
+                    item.name!,
+                    style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 14.5),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
-            ).paddingOnly(top: 16, bottom: 16),
+            ),
           ),
         );
       },
