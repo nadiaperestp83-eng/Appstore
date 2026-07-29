@@ -1,6 +1,6 @@
 UNDER DEVELOPMENT
 
-#  AppStore Public App Flutter
+#  Zircon Labs App Store Public App Flutter
 
 ## Built By
 
