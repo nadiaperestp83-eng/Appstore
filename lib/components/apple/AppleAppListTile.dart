@@ -81,7 +81,6 @@ class _AppleAppListTileState extends State<AppleAppListTile> {
           curve: Curves.easeOutCubic,
           child: _expanded ? _buildExpandedDetails(data, category, sizeLabel) : SizedBox(width: double.infinity),
         ),
-        Divider(height: 1, thickness: 1, color: AppleColors.divider, indent: 16, endIndent: 16),
       ],
     );
   }
