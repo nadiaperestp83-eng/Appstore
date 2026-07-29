@@ -60,11 +60,11 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
       backgroundColor: AppleColors.backgroundSecondary,
       extendBody: true,
       appBar: PreferredSize(
-        preferredSize: Size(context.width(), 140),
+        preferredSize: Size(context.width(), 100),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppScreen(),
+            AppScreen(title: _titleForIndex(currentIndex)),
             Container(
               child: TabBar(
                 isScrollable: true,
@@ -98,12 +98,27 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
       // do zero - refazendo TODAS as buscas de rede de novo. Esse era o
       // principal gerador de "loop de load" da aplicação.
       body: IndexedStack(index: currentIndex, children: pages),
-      // O Drawer lateral saiu daqui - o botão de perfil no topo (dentro de
-      // AppScreen, em PSNavigationScreen.dart) agora abre um bottom sheet
-      // estilo iOS (ver AppleProfileMenuSheet.dart) com os mesmos itens
-      // que ficavam aqui.
+      // O Drawer lateral e a barra de busca gigante saíram daqui - o
+      // cabeçalho (AppScreen, em PSNavigationScreen.dart) agora é só um
+      // título grande + 3 ícones (busca / mic / engrenagem), e a
+      // engrenagem abre PSSettingScreen direto.
       bottomNavigationBar: _buildAppleFloatingPillNavBar(),
     );
+  }
+
+  /// Título grande do cabeçalho, de acordo com a aba ativa da pílula
+  /// inferior (Games -> Apps -> Apps livres).
+  String _titleForIndex(int index) {
+    switch (index) {
+      case 0:
+        return 'Games';
+      case 1:
+        return 'Apps';
+      case 2:
+        return 'Apps livres';
+      default:
+        return '';
+    }
   }
 
   void _onNavItemTap(int index) {
