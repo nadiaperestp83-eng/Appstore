@@ -2,101 +2,136 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:nb_utils/nb_utils.dart';
-import 'package:playstore_flutter/components/apple/AppleProfileMenuSheet.dart';
 import 'package:playstore_flutter/screens/PSSearchResultsScreen.dart';
+import 'package:playstore_flutter/screens/PSSettingScreen.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSSearchHistoryUtil.dart';
 
+/// Cabeçalho estilo iOS: título grande da seção à esquerda ("Games" /
+/// "Apps" / "Apps livres", conforme a aba ativa) e um pequeno grupo de
+/// ícones de ação à direita (busca, microfone, configurações).
+///
+/// Substitui a antiga barra de busca flutuante gigante que ficava aqui -
+/// agora a busca abre em cima da tela (via [showSearch]/[_AppSearchDelegate])
+/// só quando o usuário toca na lupa, e o ícone de perfil deu lugar a uma
+/// engrenagem que abre [PSSettingScreen] diretamente.
 class AppScreen extends StatefulWidget {
   static String tag = '/AppScreen';
+
+  /// Título grande exibido à esquerda (ex: "Games", "Apps", "Apps livres").
+  final String title;
+
+  const AppScreen({Key? key, required this.title}) : super(key: key);
 
   @override
   AppScreenState createState() => AppScreenState();
 }
 
 class AppScreenState extends State<AppScreen> {
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    init();
-  }
-
-  init() async {
-    //
-  }
-
-  @override
-  void setState(fn) {
-    if (mounted) super.setState(fn);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _runSearch(BuildContext context) {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) return;
-    PSSearchHistory.add(query);
-    PSSearchResultsScreen(query: query).launch(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(right: 8),
-      alignment: Alignment.topCenter,
-      decoration: BoxDecoration(
-        color: AppleColors.background,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      width: MediaQuery.of(context).size.width,
-      margin: EdgeInsets.only(top: 50, left: 16, right: 16),
+      color: AppleColors.background,
+      padding: EdgeInsets.only(top: 50, left: 16, right: 8, bottom: 8),
       child: Row(
         children: [
-          12.width,
-          TextFormField(
-            controller: _searchController,
-            showCursor: true,
-            textInputAction: TextInputAction.search,
-            onFieldSubmitted: (_) => _runSearch(context),
-            style: primaryTextStyle(color: AppleColors.textPrimary),
-            decoration: InputDecoration(
-              focusedBorder: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              hintText: 'Search for apps & games',
-              hintStyle: secondaryTextStyle(color: AppleColors.textSecondary),
+          Expanded(
+            child: Text(
+              widget.title,
+              style: boldTextStyle(color: AppleColors.textPrimary, size: 30),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ).expand(),
+          ),
           IconButton(
             icon: Icon(Icons.search, color: AppleColors.textSecondary),
-            onPressed: () => _runSearch(context),
+            onPressed: () => _openSearch(context),
           ),
           IconButton(
             icon: Icon(Icons.keyboard_voice_outlined, color: AppleColors.textSecondary),
             onPressed: () {},
           ),
-          // Botão de perfil: antes abria o Drawer lateral (junto com o
-          // ícone de hambúrguer que ficava aqui do lado); agora ele
-          // sozinho abre o sheet estilo iOS que sobe de baixo pra cima
-          // (ver AppleProfileMenuSheet.dart) - não existe mais Drawer no
-          // app.
-          InkWell(
-            onTap: () => showAppleProfileMenuSheet(context),
-            child: CircleAvatar(
-              maxRadius: 17,
-              backgroundColor: AppleColors.backgroundSecondary,
-              child: Icon(Icons.person_rounded, color: AppleColors.textSecondary, size: 20),
-            ),
+          // Engrenagem no lugar do antigo avatar de perfil: abre a tela de
+          // configurações direto, sem passar pelo bottom sheet de perfil.
+          IconButton(
+            icon: Icon(Icons.settings, color: AppleColors.textSecondary),
+            onPressed: () => PSSettingScreen().launch(context),
           ),
         ],
       ),
+    );
+  }
+
+  void _openSearch(BuildContext context) async {
+    final query = await showSearch<String?>(
+      context: context,
+      delegate: _AppSearchDelegate(),
+    );
+    if (query != null && query.trim().isNotEmpty) {
+      PSSearchHistory.add(query.trim());
+      PSSearchResultsScreen(query: query.trim()).launch(context);
+    }
+  }
+}
+
+/// Delegate de busca padrão do Flutter (abre em cima da tela, com o
+/// teclado já focado). Sugestões mostram o histórico local salvo em
+/// [PSSearchHistory]; tocar em uma sugestão ou apertar "buscar" no
+/// teclado fecha esta camada e devolve o texto para [AppScreenState].
+class _AppSearchDelegate extends SearchDelegate<String?> {
+  @override
+  String get searchFieldLabel => 'Search for apps & games';
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      if (query.isNotEmpty)
+        IconButton(
+          icon: Icon(Icons.clear),
+          onPressed: () => query = '',
+        ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.arrow_back),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) close(context, query);
+    });
+    return const SizedBox.shrink();
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return FutureBuilder<List<String>>(
+      future: PSSearchHistory.getAll(),
+      builder: (context, snapshot) {
+        final history = snapshot.data ?? [];
+        if (history.isEmpty) return const SizedBox.shrink();
+
+        return ListView.builder(
+          itemCount: history.length,
+          itemBuilder: (context, index) {
+            final term = history[index];
+            return ListTile(
+              leading: Icon(Icons.history, color: AppleColors.textSecondary),
+              title: Text(term),
+              onTap: () {
+                query = term;
+                close(context, term);
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
