@@ -48,8 +48,6 @@ class _ProfileMenuSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _profileCard(),
-                      24.height,
                       _groupedCard([
                         _row(
                           icon: MaterialCommunityIcons.apps_box,
@@ -117,32 +115,6 @@ class _ProfileMenuSheet extends StatelessWidget {
   // ---------------------------------------------------------------------
   // Building blocks (mesmo padrão visual da aba Settings)
   // ---------------------------------------------------------------------
-
-  Widget _profileCard() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppleColors.background, borderRadius: BorderRadius.circular(14)),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: AppleColors.backgroundSecondary,
-            child: Icon(Icons.person_rounded, color: AppleColors.textSecondary, size: 28),
-          ),
-          14.width,
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('John Doe', style: GoogleFonts.inter(color: AppleColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
-              2.height,
-              Text('johndoe@gmail.com', style: GoogleFonts.inter(color: AppleColors.textSecondary, fontSize: 13)),
-            ],
-          ).expand(),
-        ],
-      ),
-    );
-  }
 
   Widget _sectionLabel(String text) {
     return Padding(
