@@ -1,6 +1,8 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
 import 'package:playstore_flutter/screens/PSAppsScreen.dart';
@@ -56,6 +58,7 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppleColors.backgroundSecondary,
+      extendBody: true,
       appBar: PreferredSize(
         preferredSize: Size(context.width(), 140),
         child: Column(
@@ -99,44 +102,149 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
       // AppScreen, em PSNavigationScreen.dart) agora abre um bottom sheet
       // estilo iOS (ver AppleProfileMenuSheet.dart) com os mesmos itens
       // que ficavam aqui.
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-              title: Text('Games'),
-              icon: Icon(Icons.sports_esports_outlined, size: 20),
-              activeIcon: Icon(Entypo.game_controller, size: 25),
-              backgroundColor: Colors.white),
-          BottomNavigationBarItem(
-              icon: Icon(AntDesign.appstore_o, size: 25),
-              activeIcon: Icon(AntDesign.appstore1, size: 25),
-              title: Text('Apps'),
-              backgroundColor: Colors.white),
-          BottomNavigationBarItem(
-              icon: Icon(MaterialCommunityIcons.source_branch, size: 25),
-              activeIcon: Icon(MaterialCommunityIcons.source_repository, size: 25),
-              label: 'Apps livres',
-              backgroundColor: Colors.white),
-        ],
-        selectedItemColor: currentIndex == 0 || currentIndex == 1
-            ? Colors.green
-            : Colors.red[600],
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-            if (index == 0) {
-              _tabController = TabController(
-                  vsync: this, initialIndex: 0, length: getGameList.length);
-            } else if (index == 1) {
-              _tabController = TabController(
-                  vsync: this, initialIndex: 0, length: appsList.length);
-            } else if (index == 2) {
-              _tabController = TabController(
-                  vsync: this, initialIndex: 0, length: movieList.length);
-            }
-          });
-        },
+      bottomNavigationBar: _buildAppleFloatingPillNavBar(),
+    );
+  }
+
+  void _onNavItemTap(int index) {
+    setState(() {
+      currentIndex = index;
+      if (index == 0) {
+        _tabController = TabController(
+            vsync: this, initialIndex: 0, length: getGameList.length);
+      } else if (index == 1) {
+        _tabController = TabController(
+            vsync: this, initialIndex: 0, length: appsList.length);
+      } else if (index == 2) {
+        _tabController = TabController(
+            vsync: this, initialIndex: 0, length: movieList.length);
+      }
+    });
+  }
+
+  /// Barra inferior no estilo da App Store da Apple: uma "pílula" flutuante,
+  /// centralizada, com fundo translúcido (blur) e sombra suave - ao invés de
+  /// uma BottomNavigationBar tradicional ocupando a largura inteira da tela.
+  ///
+  /// Apenas 3 abas, na ordem: Games -> Apps -> Apps livres.
+  /// (Os equivalentes de "Today", "Arcade" e a lupa de busca separada da
+  /// referência da Apple foram propositalmente omitidos.)
+  Widget _buildAppleFloatingPillNavBar() {
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 44,
+        right: 44,
+        bottom: bottomSafeArea > 0 ? bottomSafeArea - 4 : 16,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppleColors.background.withOpacity(0.72),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.4),
+                width: 0.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _AppleNavItem(
+                  label: 'Games',
+                  icon: CupertinoIcons.rocket,
+                  activeIcon: CupertinoIcons.rocket_fill,
+                  isSelected: currentIndex == 0,
+                  onTap: () => _onNavItemTap(0),
+                ),
+                _AppleNavItem(
+                  label: 'Apps',
+                  icon: CupertinoIcons.square_stack_3d_up,
+                  activeIcon: CupertinoIcons.square_stack_3d_up_fill,
+                  isSelected: currentIndex == 1,
+                  onTap: () => _onNavItemTap(1),
+                ),
+                _AppleNavItem(
+                  label: 'Apps livres',
+                  icon: CupertinoIcons.cube,
+                  activeIcon: CupertinoIcons.cube_fill,
+                  isSelected: currentIndex == 2,
+                  onTap: () => _onNavItemTap(2),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Item individual da pílula de navegação, no estilo da App Store: ícone
+/// Cupertino em cima, rótulo pequeno embaixo. Azul (`AppleColors.accentBlue`)
+/// quando selecionado, cinza secundário (`AppleColors.textSecondary`) quando
+/// não selecionado.
+class _AppleNavItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _AppleNavItem({
+    Key? key,
+    required this.label,
+    required this.icon,
+    required this.activeIcon,
+    required this.isSelected,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        isSelected ? AppleColors.accentBlue : AppleColors.textSecondary;
+
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedSwitcher(
+          duration: Duration(milliseconds: 150),
+          child: Column(
+            key: ValueKey(isSelected),
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? activeIcon : icon,
+                color: color,
+                size: 24,
+              ),
+              SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
