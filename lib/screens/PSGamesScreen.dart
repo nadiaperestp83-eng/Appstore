@@ -103,11 +103,11 @@ class PSGamesScreenState extends State<PSGamesScreen> with TickerProviderStateMi
   Widget _buildTabContent(BuildContext context) {
     switch (tabIndex) {
       case 0:
-        return _ForYouSections(future: _forYouFuture, sectionOrder: gamesForYouSectionNames).paddingBottom(16);
+        return _ForYouSections(future: _forYouFuture, sectionOrder: gamesForYouSectionNames).paddingBottom(100);
       case 1:
-        return PSTopChartsFragment(sectionsFuture: _topChartsFuture, sectionOrder: gamesTopChartsSectionNames).paddingBottom(16);
+        return PSTopChartsFragment(sectionsFuture: _topChartsFuture, sectionOrder: gamesTopChartsSectionNames).paddingBottom(100);
       case 2:
-        return CategoriesList(data: _categoriesList);
+        return CategoriesList(data: _categoriesList).paddingBottom(100);
       default:
         return SizedBox();
     }
