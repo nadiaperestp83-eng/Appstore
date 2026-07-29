@@ -2,8 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:playstore_flutter/components/apple/AppleProfileMenuSheet.dart';
 import 'package:playstore_flutter/screens/PSSearchResultsScreen.dart';
-import 'package:playstore_flutter/utils/PSImages.dart';
+import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSSearchHistoryUtil.dart';
 
 class AppScreen extends StatefulWidget {
@@ -49,120 +50,53 @@ class AppScreenState extends State<AppScreen> {
     return Container(
       padding: EdgeInsets.only(right: 8),
       alignment: Alignment.topCenter,
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2.0)], borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: AppleColors.background,
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
+        borderRadius: BorderRadius.circular(12),
+      ),
       width: MediaQuery.of(context).size.width,
       margin: EdgeInsets.only(top: 50, left: 16, right: 16),
       child: Row(
         children: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          ),
-          8.width,
+          12.width,
           TextFormField(
             controller: _searchController,
             showCursor: true,
             textInputAction: TextInputAction.search,
             onFieldSubmitted: (_) => _runSearch(context),
-            decoration: InputDecoration(focusedBorder: InputBorder.none, enabledBorder: InputBorder.none, errorBorder: InputBorder.none, hintText: 'Search for apps & games'),
+            style: primaryTextStyle(color: AppleColors.textPrimary),
+            decoration: InputDecoration(
+              focusedBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              hintText: 'Search for apps & games',
+              hintStyle: secondaryTextStyle(color: AppleColors.textSecondary),
+            ),
           ).expand(),
           IconButton(
-            icon: Icon(Icons.search),
+            icon: Icon(Icons.search, color: AppleColors.textSecondary),
             onPressed: () => _runSearch(context),
           ),
           IconButton(
-            icon: Icon(Icons.keyboard_voice_outlined),
+            icon: Icon(Icons.keyboard_voice_outlined, color: AppleColors.textSecondary),
             onPressed: () {},
           ),
+          // Botão de perfil: antes abria o Drawer lateral (junto com o
+          // ícone de hambúrguer que ficava aqui do lado); agora ele
+          // sozinho abre o sheet estilo iOS que sobe de baixo pra cima
+          // (ver AppleProfileMenuSheet.dart) - não existe mais Drawer no
+          // app.
           InkWell(
-            onTap: () {
-              accountDialogBox(context);
-            },
-            child: CircleAvatar(maxRadius: 17, child: Text('J'), backgroundColor: Colors.purple),
+            onTap: () => showAppleProfileMenuSheet(context),
+            child: CircleAvatar(
+              maxRadius: 17,
+              backgroundColor: AppleColors.backgroundSecondary,
+              child: Icon(Icons.person_rounded, color: AppleColors.textSecondary, size: 20),
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Future accountDialogBox(BuildContext context) async {
-    return await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          scrollable: true,
-          contentPadding: EdgeInsets.zero,
-          content: Container(
-            height: 440,
-            width: 400,
-            child: Column(
-              children: [
-                Container(
-                  width: 400,
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.close),
-                        onPressed: () {
-                          finish(context);
-                        },
-                      ),
-                      Image.asset(PS_google, width: 30, height: 30).paddingOnly(right: 26).expand(),
-                    ],
-                  ),
-                ),
-                ListTile(
-                  title: Text('John Doe'),
-                  subtitle: Text('johndoe@gmail.com'),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.green,
-                    child: Text('S', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.black26)),
-                  ),
-                  onPressed: () {},
-                  child: Text('My Account'),
-                ),
-                Divider(thickness: 1),
-                ListTile(
-                  onTap: () {},
-                  title: Text('Smith Doe'),
-                  subtitle: Text('smith.doe@gmail.com'),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.green,
-                    child: Text('S', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-                ListTile(
-                  onTap: () {},
-                  leading: CircleAvatar(child: Icon(Icons.person_add_alt_1_outlined, color: Colors.black54)),
-                  title: Text('Add another account'),
-                ),
-                ListTile(
-                  onTap: () {},
-                  leading: CircleAvatar(
-                    child: Icon(Icons.person_add_alt_1_outlined, color: Colors.black54),
-                  ),
-                  title: Text('Manage account on this device'),
-                ),
-                Divider(thickness: 1),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    TextButton(onPressed: () {}, child: Text('Privacy Policy', style: TextStyle(fontSize: 12))),
-                    TextButton(onPressed: () {}, child: Text('Terms of Service', style: TextStyle(fontSize: 12))),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
