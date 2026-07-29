@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/screens/PSSearchResultsScreen.dart';
 import 'package:playstore_flutter/utils/PSImages.dart';
+import 'package:playstore_flutter/utils/PSSearchHistoryUtil.dart';
 
 class AppScreen extends StatefulWidget {
   static String tag = '/AppScreen';
@@ -39,6 +40,7 @@ class AppScreenState extends State<AppScreen> {
   void _runSearch(BuildContext context) {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
+    PSSearchHistory.add(query);
     PSSearchResultsScreen(query: query).launch(context);
   }
 
