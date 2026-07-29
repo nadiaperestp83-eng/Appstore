@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/screens/PSDashboardScreen.dart';
 import 'package:playstore_flutter/screens/PSWelcomeScreen.dart';
+import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSConstants.dart';
 
