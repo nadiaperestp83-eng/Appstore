@@ -142,25 +142,19 @@ List<CategoriesApps> moviesCategoriesApps() {
   return list;
 }
 
+/// As 7 categorias principais exibidas na grade "Categories" da aba
+/// "Apps" - nomes mantidos em inglês por pedido, ícones minimalistas
+/// (Material rounded) representando cada uma.
 List<CategoriesApps> getCategoriesListApp() {
   List<CategoriesApps> categoriesapps = [];
 
-  categoriesapps.add(CategoriesApps(name: 'Art & Design', icon: Icons.design_services));
-  categoriesapps.add(CategoriesApps(name: 'Augmented reality', icon: Icons.data_usage_rounded));
-  categoriesapps.add(CategoriesApps(name: 'Auto & Vehicles', icon: (Icons.date_range)));
-  categoriesapps.add(CategoriesApps(name: 'Beauty', icon: (Icons.add_circle_outline)));
-  categoriesapps.add(CategoriesApps(name: 'Books & Reference', icon: Icons.credit_card));
-  categoriesapps.add(CategoriesApps(name: 'Beauty', icon: Icons.casino_outlined));
-  categoriesapps.add(CategoriesApps(name: 'Books & Reference', icon: Icons.cast));
-  categoriesapps.add(CategoriesApps(name: 'Business', icon: Icons.business));
-  categoriesapps.add(CategoriesApps(name: 'Comics', icon: Icons.padding));
-  categoriesapps.add(CategoriesApps(name: 'Dating', icon: Icons.pages));
-  categoriesapps.add(CategoriesApps(name: 'Eduction', icon: Icons.local_play_outlined));
-  categoriesapps.add(CategoriesApps(name: 'Events', icon: Icons.circle_notifications));
-  categoriesapps.add(CategoriesApps(name: 'Finance', icon: Icons.sports));
-  categoriesapps.add(CategoriesApps(name: 'Food & Drink', icon: Icons.amp_stories_rounded));
-  categoriesapps.add(CategoriesApps(name: 'Sports', icon: Icons.trip_origin));
-  categoriesapps.add(CategoriesApps(name: 'Games', icon: Icons.work_outline_sharp));
+  categoriesapps.add(CategoriesApps(name: 'Communication', icon: Icons.forum_rounded));
+  categoriesapps.add(CategoriesApps(name: 'Dating', icon: Icons.favorite_rounded));
+  categoriesapps.add(CategoriesApps(name: 'Lifestyle & Health', icon: Icons.spa_rounded));
+  categoriesapps.add(CategoriesApps(name: 'Finance', icon: Icons.account_balance_wallet_rounded));
+  categoriesapps.add(CategoriesApps(name: 'Photography', icon: Icons.camera_alt_rounded));
+  categoriesapps.add(CategoriesApps(name: 'Education', icon: Icons.school_rounded));
+  categoriesapps.add(CategoriesApps(name: 'Media & Players', icon: Icons.play_circle_rounded));
 
   return categoriesapps;
 }
@@ -533,6 +527,68 @@ Future<List<PSGameModel>> searchFreeApps(
     return title.contains(q) || subtitle.contains(q);
   }).toList();
 
+  return matches.take(limit).toList();
+}
+
+/// Termos de busca reais usados para representar cada categoria da grade
+/// "Categories" nas fontes que só indexam por texto livre: a Aptoide não
+/// tem endpoint público estável de "categoria", e F-Droid/GitHub não
+/// indexam por categoria nenhuma - então cada categoria vira 1+ palavras-
+/// chave de busca, cobrindo melhor o catálogo real de cada fonte.
+const Map<String, List<String>> categorySearchKeywords = {
+  'Communication': ['communication', 'messenger', 'chat'],
+  'Dating': ['dating'],
+  'Lifestyle & Health': ['health', 'fitness', 'lifestyle'],
+  'Finance': ['finance', 'banking', 'wallet'],
+  'Photography': ['photo', 'camera'],
+  'Education': ['education', 'learning'],
+  'Media & Players': ['music player', 'video player', 'media player'],
+};
+
+/// Busca real na Aptoide (fonte "Apps") pelas palavras-chave de uma
+/// categoria, em paralelo, unindo e removendo duplicados (por
+/// packageName, com fallback pro título quando ele não existe).
+Future<List<PSGameModel>> searchAptoideAppsByCategory(String categoryName, {int limit = 30}) async {
+  final keywords = categorySearchKeywords[categoryName] ?? [categoryName];
+  final resultsPerKeyword = await Future.wait(
+    keywords.map((k) => searchAptoideApps(k, limit: limit).catchError((_) => <PSGameModel>[])),
+  );
+
+  final merged = <String, PSGameModel>{};
+  for (final list in resultsPerKeyword) {
+    for (final app in list) {
+      final key = app.packageName ?? app.title ?? '';
+      if (key.isEmpty) continue;
+      merged.putIfAbsent(key, () => app);
+    }
+  }
+  return merged.values.take(limit).toList();
+}
+
+/// Busca real em F-Droid + GitHub (fonte "Apps livres") pelas palavras-
+/// chave de uma categoria: primeiro tenta bater com as categorias reais
+/// que o F-Droid já traz por app ([PSGameModel.categories]); se nada bater
+/// (comum pra apps do GitHub, que não têm essa metadata), cai pro mesmo
+/// critério textual de [searchFreeApps] (título/descrição) - assim a
+/// categoria nunca fica vazia à toa por falta de metadata numa fonte.
+Future<List<PSGameModel>> searchFreeAppsByCategory(String categoryName, {int limit = 30, List<String> githubRepos = const []}) async {
+  final keywords = (categorySearchKeywords[categoryName] ?? [categoryName]).map((k) => k.toLowerCase()).toList();
+  final allApps = await getRealAppsList(githubRepos: githubRepos);
+
+  bool matchesCategoryTag(PSGameModel app) {
+    final tags = (app.categories ?? []).map((c) => c.toLowerCase());
+    return tags.any((tag) => keywords.any((k) => tag.contains(k)));
+  }
+
+  bool matchesText(PSGameModel app) {
+    final haystack = '${app.title ?? ''} ${app.subTitle ?? ''}'.toLowerCase();
+    return keywords.any((k) => haystack.contains(k));
+  }
+
+  var matches = allApps.where(matchesCategoryTag).toList();
+  if (matches.isEmpty) {
+    matches = allApps.where(matchesText).toList();
+  }
   return matches.take(limit).toList();
 }
 
