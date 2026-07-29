@@ -103,7 +103,7 @@ class PSFreeAppsScreenState extends State<PSFreeAppsScreen> {
 
             return ListView.builder(
               controller: _scrollController,
-              padding: EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.only(top: 8, bottom: 100),
               itemCount: chunkCount + (hasMore ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= chunkCount) {
