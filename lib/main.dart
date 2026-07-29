@@ -10,8 +10,26 @@ AppStore appStore = AppStore();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initialize();
-  appStore.toggleDarkMode(value: await getBool(isDarkModeOnPref, defaultValue: false));
+  appStore.toggleDarkMode(value: await _resolveIsDarkMode());
   runApp(MyApp());
+}
+
+/// Resolve o modo escuro a partir da preferência salva em Settings > Theme
+/// ('system' | 'light' | 'dark', ver [PSSettingScreen]). Instalações que
+/// nunca abriram essa tela ainda não têm [themeModePref] salvo - nesse
+/// caso cai no comportamento antigo, lendo direto [isDarkModeOnPref].
+Future<bool> _resolveIsDarkMode() async {
+  final mode = await getStringAsync(themeModePref, defaultValue: '');
+  switch (mode) {
+    case 'dark':
+      return true;
+    case 'light':
+      return false;
+    case 'system':
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+    default:
+      return await getBool(isDarkModeOnPref, defaultValue: false);
+  }
 }
 
 class MyApp extends StatelessWidget {
