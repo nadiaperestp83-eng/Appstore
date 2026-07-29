@@ -3,16 +3,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSAppbarModel.dart';
-import 'package:playstore_flutter/screens/PSAppsGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSFreeAppsScreen.dart';
 import 'package:playstore_flutter/screens/PSGamesScreen.dart';
 import 'package:playstore_flutter/screens/PSNavigationScreen.dart';
-import 'package:playstore_flutter/screens/PSNotificationScreen.dart';
-import 'package:playstore_flutter/screens/PSPlayProtectScreen.dart';
-import 'package:playstore_flutter/screens/PSSettingScreen.dart';
 import 'package:playstore_flutter/utils/PSColor.dart';
-import 'package:playstore_flutter/utils/PSImages.dart';
 
 class PSDashboardScreen extends StatefulWidget {
   static String tag = '/PSDashboardScreen';
@@ -23,7 +18,6 @@ class PSDashboardScreen extends StatefulWidget {
 
 class PSDashboardScreenState extends State<PSDashboardScreen>
     with TickerProviderStateMixin {
-  GlobalKey<ScaffoldState> drawerKey = GlobalKey();
   TabController? _tabController;
 
   int currentIndex = 0;
@@ -60,7 +54,6 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: drawerKey,
       appBar: PreferredSize(
         preferredSize: Size(context.width(), 140),
         child: Column(
@@ -100,93 +93,10 @@ class PSDashboardScreenState extends State<PSDashboardScreen>
       // do zero - refazendo TODAS as buscas de rede de novo. Esse era o
       // principal gerador de "loop de load" da aplicação.
       body: IndexedStack(index: currentIndex, children: pages),
-      drawer: Drawer(
-        child: SingleChildScrollView(
-          child: Container(
-            margin: EdgeInsets.all(8),
-            padding: EdgeInsets.only(top: 32),
-            child: Column(
-              children: [
-                8.height,
-                Row(
-                  children: [
-                    Image.asset("./images/playStore/ps_playstore.png",
-                            width: 30, height: 30)
-                        .paddingOnly(left: 8),
-                    Text('App', style: boldTextStyle()),
-                  ],
-                ),
-                4.height,
-                Divider(thickness: 1),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -4),
-                  onTap: () {
-                    finish(context);
-                    PSAppsGamesScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(MaterialCommunityIcons.apps_box,
-                          size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('My apps & games', style: primaryTextStyle()),
-                ),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  onTap: () {
-                    finish(context);
-                    PSNotificationScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading:
-                      Icon(AntDesign.bells, size: 20, color: Colors.black54)
-                          .paddingOnly(left: 8),
-                  title: Text('Notifications', style: primaryTextStyle()),
-                ),
-                Divider(thickness: 1),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  onTap: () {
-                    finish(context);
-                    PSPlayProtectScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(MaterialCommunityIcons.security,
-                          size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('Play Protect', style: primaryTextStyle()),
-                ),
-                ListTile(
-                  visualDensity: VisualDensity(vertical: -2),
-                  onTap: () {
-                    finish(context);
-                    PSSettingScreen().launch(context);
-                  },
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.settings, size: 20, color: Colors.black54)
-                      .paddingOnly(left: 8),
-                  title: Text('Settings', style: primaryTextStyle()),
-                ),
-                Divider(thickness: 1),
-                ListTile(
-                  visualDensity: VisualDensity(horizontal: -4, vertical: -2),
-                  contentPadding: EdgeInsets.only(left: 8),
-                  title: Text('Redeem', style: boldTextStyle(size: 18)),
-                ),
-                ListTile(
-                  visualDensity: VisualDensity(horizontal: -4, vertical: -2),
-                  contentPadding: EdgeInsets.only(left: 8),
-                  title: Text('Help & feedback', style: primaryTextStyle()),
-                ),
-                ListTile(
-                  visualDensity: VisualDensity(horizontal: -4, vertical: -4),
-                  contentPadding: EdgeInsets.only(left: 8),
-                  title: Text('About App', style: primaryTextStyle()),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      // O Drawer lateral saiu daqui - o botão de perfil no topo (dentro de
+      // AppScreen, em PSNavigationScreen.dart) agora abre um bottom sheet
+      // estilo iOS (ver AppleProfileMenuSheet.dart) com os mesmos itens
+      // que ficavam aqui.
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         type: BottomNavigationBarType.fixed,
