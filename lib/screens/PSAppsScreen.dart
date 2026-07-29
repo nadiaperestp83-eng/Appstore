@@ -102,11 +102,11 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
   Widget _buildTabContent(BuildContext context) {
     switch (tabIndex) {
       case 0:
-        return _ForYouSections(future: _forYouFuture, sectionOrder: gamesAppsForYouSectionOrder).paddingBottom(16);
+        return _ForYouSections(future: _forYouFuture, sectionOrder: gamesAppsForYouSectionOrder).paddingBottom(100);
       case 1:
-        return PSTopChartsFragment(sectionsFuture: _topChartsFuture, sectionOrder: appsTopChartsSectionNames).paddingBottom(16);
+        return PSTopChartsFragment(sectionsFuture: _topChartsFuture, sectionOrder: appsTopChartsSectionNames).paddingBottom(100);
       case 2:
-        return CategoriesList(data: _categoriesList);
+        return CategoriesList(data: _categoriesList).paddingBottom(100);
       default:
         return SizedBox();
     }
