@@ -71,7 +71,7 @@ class _ProfileMenuSheet extends StatelessWidget {
                       _groupedCard([
                         _row(
                           icon: MaterialCommunityIcons.security,
-                          title: 'Play Protect',
+                          title: 'App Protect',
                           onTap: () {
                             Navigator.pop(context);
                             PSPlayProtectScreen().launch(context);
