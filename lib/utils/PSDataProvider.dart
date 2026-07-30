@@ -3,6 +3,8 @@ import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/utils/PSConstants.dart';
 import 'package:playstore_flutter/utils/PSImages.dart';
 import 'package:playstore_flutter/services/github_store_engine.dart';
+import 'package:playstore_flutter/services/codeberg_store_engine.dart';
+import 'package:playstore_flutter/services/obtainium_catalog_engine.dart';
 import 'package:playstore_flutter/services/fdroid_store_engine.dart';
 import 'package:playstore_flutter/services/aptoide_store_engine.dart';
 import 'package:playstore_flutter/models/store_app.dart';
@@ -297,25 +299,52 @@ Future<Map<String, List<PSGameModel>>> getRealAppsBySection({
 
 Future<List<HubApp>> _fetchAndMergeHubApps({
   List<String> githubRepos = const [],
+  List<String> codebergRepos = const [],
   List<FDroidStoreEngine>? fdroidEngines,
   List<String> preferredRepoOrder = const [],
+  bool includeObtainium = true,
+  int obtainiumLimit = 15,
 }) async {
+  // GitHub continua exatamente como sempre foi: uma fonte independente,
+  // alimentada por [githubRepos] (lista manual, vazia por padrão) - NÃO
+  // depende do Obtainium pra funcionar. O Obtainium é só uma fonte A MAIS,
+  // somada às demais, nunca um "portão" pras outras.
   final github = GithubStoreEngine();
+  final codeberg = CodebergStoreEngine();
   final fdroid = fdroidEngines ?? [FDroidStoreEngine()];
+  final obtainium = ObtainiumCatalogEngine();
 
   final results = await Future.wait([
     if (githubRepos.isNotEmpty)
       github.fetchLatestApps(githubRepos).catchError((e) {
         // ignore: avoid_print
         print('[getRealAppsBySection] GitHub falhou: $e');
-        return [];
+        return <StoreApp>[];
+      }),
+    if (codebergRepos.isNotEmpty)
+      codeberg.fetchLatestApps(codebergRepos).catchError((e) {
+        // ignore: avoid_print
+        print('[getRealAppsBySection] Codeberg falhou: $e');
+        return <StoreApp>[];
       }),
     ...fdroid.map((engine) => engine.fetchApps().catchError((e) {
           // ignore: avoid_print
           print('[getRealAppsBySection] F-Droid (${engine.repoLabel}) falhou: $e');
-          return [];
+          return <StoreApp>[];
         })),
+    // Catálogo comunitário do Obtainium (GitHub/Codeberg descobertos por
+    // ele, não por uma lista fixa nossa) - ver ObtainiumCatalogEngine.dart.
+    if (includeObtainium)
+      obtainium.fetchResolvedApps(limit: obtainiumLimit).catchError((e) {
+        // ignore: avoid_print
+        print('[getRealAppsBySection] Obtainium falhou: $e');
+        return <StoreApp>[];
+      }),
   ]);
+
+  github.dispose();
+  codeberg.dispose();
+  obtainium.dispose();
 
   final allApps = results.expand((r) => r).toList();
   final mergeEngine = HubAppMergeEngine(preferredRepoOrder: preferredRepoOrder);
@@ -353,36 +382,54 @@ Future<Map<String, List<PSGameModel>>> getAptoideGamesBySection(
 
 /// Alimenta os carrosséis da aba Apps usando o Aptoide (busca por termo,
 /// já que a API deles não tem um dump completo do catálogo como o F-Droid).
+/// "For you" da aba Apps: 4 seções, sendo a última ("More Apps") uma
+/// mistura de dois mundos - Aptoide (busca "tools utility") + o catálogo
+/// do Obtainium via "Direct APK Link"/fallback "HTML" (ver
+/// [ObtainiumCatalogEngine.fetchMoreApps]), que NÃO são exclusivamente
+/// open source (o Obtainium rastreia releases de vários apps fechados/
+/// freeware direto do site oficial deles também) - por isso essa mistura
+/// fica de fora das outras 3 seções, que continuam só Aptoide.
 Future<Map<String, List<PSGameModel>>> getAptoideAppsBySection({
   int perSectionLimit = 20,
 }) async {
   final aptoide = AptoideStoreEngine();
+  final obtainium = ObtainiumCatalogEngine();
 
   const sectionQueries = {
     'Recommended for you': 'app',
     'Educational apps': 'education',
     'Music Players': 'music player',
-    'Tools & utilities': 'tools utility',
+    'More Apps': 'tools utility',
   };
 
-  final results = await Future.wait(
-    sectionQueries.entries.map((entry) async {
+  final results = await Future.wait([
+    ...sectionQueries.entries.map((entry) async {
       try {
         final apps = await aptoide.searchApps(entry.value, limit: perSectionLimit);
-        return MapEntry(entry.key, apps);
+        return MapEntry(entry.key, apps.map(_storeAppToGameModel).toList());
       } catch (e) {
         // ignore: avoid_print
         print('[getAptoideAppsBySection] "${entry.key}" falhou: $e');
-        return MapEntry(entry.key, <StoreApp>[]);
+        return MapEntry(entry.key, <PSGameModel>[]);
       }
     }),
-  );
+    obtainium.fetchMoreApps(limit: perSectionLimit).then((apps) {
+      return MapEntry('More Apps', apps.map(_storeAppToGameModel).toList());
+    }).catchError((e) {
+      // ignore: avoid_print
+      print('[getAptoideAppsBySection] Obtainium (More Apps) falhou: $e');
+      return MapEntry('More Apps', <PSGameModel>[]);
+    }),
+  ]);
 
   aptoide.dispose();
+  obtainium.dispose();
 
-  return {
-    for (final entry in results) entry.key: entry.value.map(_storeAppToGameModel).toList(),
-  };
+  final merged = <String, List<PSGameModel>>{};
+  for (final entry in results) {
+    merged.update(entry.key, (existing) => [...existing, ...entry.value], ifAbsent: () => entry.value);
+  }
+  return merged;
 }
 
 // =========================================================================
@@ -486,16 +533,23 @@ PSGameModel _storeAppToGameModel(StoreApp app) {
   );
 }
 
-/// Usado pela aba "Apps livres": busca tudo (F-Droid + GitHub) em uma lista só.
+/// Usado pela aba "Apps livres": busca tudo (F-Droid + Codeberg + GitHub
+/// descoberto via Obtainium) em uma lista só.
 Future<List<PSGameModel>> getRealAppsList({
   List<String> githubRepos = const [],
+  List<String> codebergRepos = const [],
   List<FDroidStoreEngine>? fdroidEngines,
   List<String> preferredRepoOrder = const [],
+  bool includeObtainium = true,
+  int obtainiumLimit = 15,
 }) async {
   final hubApps = await _fetchAndMergeHubApps(
     githubRepos: githubRepos,
+    codebergRepos: codebergRepos,
     fdroidEngines: fdroidEngines,
     preferredRepoOrder: preferredRepoOrder,
+    includeObtainium: includeObtainium,
+    obtainiumLimit: obtainiumLimit,
   );
   return hubApps.map(_hubAppToGameModel).toList();
 }
@@ -590,6 +644,42 @@ Future<List<PSGameModel>> searchFreeAppsByCategory(String categoryName, {int lim
     matches = allApps.where(matchesText).toList();
   }
   return matches.take(limit).toList();
+}
+
+/// Mapa de cada categoria da grade "Apps" para os slugs REAIS de
+/// categoria usados pelo catálogo comunitário do Obtainium (vistos direto
+/// em apps.obtainium.imranr.dev, parâmetro `?category=`). Quando não
+/// existe nada parecido no catálogo (ex: "Dating" - o Obtainium é
+/// FOSS/utilitários, não tem apps de namoro), o mapeamento fica vazio de
+/// propósito: é melhor mostrar 0 resultados do Obtainium ali do que
+/// inventar uma categoria que não existe nele.
+const Map<String, List<String>> obtainiumCategorySlugs = {
+  'Communication': ['messaging', 'community_clients', 'email_clients', 'video_calling', 'dialer'],
+  'Dating': [],
+  'Lifestyle & Health': ['sports_and_health'],
+  'Finance': ['finance'],
+  'Photography': ['camera', 'image_manipulation', 'image_viewer_and_gallery'],
+  'Education': ['science_and_education'],
+  'Media & Players': ['video_player', 'music', 'media_frontends', 'podcast_and_audio_book_player'],
+};
+
+/// Busca real no catálogo comunitário do Obtainium (ver
+/// [ObtainiumCatalogEngine]) filtrando pela categoria pedida. Usada tanto
+/// pela grade "Apps > Categories" (via [obtainiumCategorySlugs]) quanto
+/// pelos gêneros de jogos de "Games > Categories" - o Obtainium não separa
+/// jogos por gênero, então qualquer gênero (Action, Arcade, etc.) cai no
+/// único slug "games" que ele tem.
+Future<List<PSGameModel>> searchObtainiumAppsByCategory(String categoryName, {int limit = 15}) async {
+  final slugs = obtainiumCategorySlugs.containsKey(categoryName) ? obtainiumCategorySlugs[categoryName]! : const ['games'];
+  if (slugs.isEmpty) return [];
+
+  final engine = ObtainiumCatalogEngine();
+  try {
+    final apps = await engine.fetchResolvedApps(categorySlugs: slugs, limit: limit);
+    return apps.map(_storeAppToGameModel).toList();
+  } finally {
+    engine.dispose();
+  }
 }
 
 PSGameModel _hubAppToGameModel(HubApp hubApp) {
