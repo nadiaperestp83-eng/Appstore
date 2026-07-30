@@ -5,17 +5,26 @@ import 'package:playstore_flutter/components/apple/AppleGroupedCard.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSDataProvider.dart';
+import 'package:playstore_flutter/services/fdroid_store_engine.dart';
 
-/// Aba "Apps livres": apps de código aberto vindos do F-Droid + GitHub.
-/// Para adicionar repositórios do GitHub, preencha _githubRepos abaixo,
-/// ex: ['Genymobile/scrcpy', 'termux/termux-app'].
+/// Aba "Apps livres": apps de código aberto vindos de várias fontes,
+/// somadas (nenhuma substitui a outra):
+/// - F-Droid oficial + IzzyOnDroid (repositório F-Droid compatível de
+///   terceiros, ~1400 apps extras) - ver [_fdroidEngines] abaixo pra
+///   adicionar outros repositórios F-Droid compatíveis.
+/// - GitHub: continua 100% independente, alimentado pela lista manual
+///   _githubRepos abaixo (igual sempre foi) - ex:
+///   ['Genymobile/scrcpy', 'termux/termux-app'].
+/// - Codeberg: mesma ideia, lista manual _codebergRepos abaixo.
+/// - Obtainium: catálogo comunitário (github/codeberg descobertos por ele -
+///   ver ObtainiumCatalogEngine.dart) somado a tudo isso, nunca no lugar.
 ///
 /// Layout em LISTA (não mais grid) e carregamento progressivo em lotes de
 /// 10 itens: a busca na rede continua trazendo a lista inteira de uma vez
-/// (é isso que F-Droid/GitHub retornam), mas a tela só CONSTRÓI e RENDERIZA
-/// os primeiros 10 itens; o restante só entra conforme o usuário rola até
-/// perto do fim. Isso evita a trava visual de tentar montar centenas de
-/// linhas (com imagem de rede cada uma) de uma vez só.
+/// (é isso que F-Droid/Codeberg/GitHub retornam), mas a tela só CONSTRÓI e
+/// RENDERIZA os primeiros 10 itens; o restante só entra conforme o usuário
+/// rola até perto do fim. Isso evita a trava visual de tentar montar
+/// centenas de linhas (com imagem de rede cada uma) de uma vez só.
 ///
 /// Sem busca própria: a busca global já fica no topo da tela principal
 /// (ver [AppScreen] em PSNavigationScreen.dart), então essa aba não duplica
@@ -31,6 +40,15 @@ const int _pageSize = 10;
 
 class PSFreeAppsScreenState extends State<PSFreeAppsScreen> {
   static const List<String> _githubRepos = [];
+  static const List<String> _codebergRepos = [];
+
+  // F-Droid oficial + IzzyOnDroid por padrão. Pra somar outro repositório
+  // F-Droid compatível de terceiros, é só adicionar mais um FDroidStoreEngine
+  // aqui (ex: FDroidStoreEngine(repoBaseUrl: '...', repoLabel: '...')).
+  static final List<FDroidStoreEngine> _fdroidEngines = [
+    FDroidStoreEngine(),
+    FDroidStoreEngine(repoBaseUrl: 'https://apt.izzysoft.de/fdroid/repo', repoLabel: 'IzzyOnDroid'),
+  ];
 
   late final Future<List<PSGameModel>> _appsFuture;
   final ScrollController _scrollController = ScrollController();
@@ -41,7 +59,11 @@ class PSFreeAppsScreenState extends State<PSFreeAppsScreen> {
   @override
   void initState() {
     super.initState();
-    _appsFuture = getRealAppsList(githubRepos: _githubRepos).then((apps) {
+    _appsFuture = getRealAppsList(
+      githubRepos: _githubRepos,
+      codebergRepos: _codebergRepos,
+      fdroidEngines: _fdroidEngines,
+    ).then((apps) {
       _allApps = apps;
       return apps;
     });
