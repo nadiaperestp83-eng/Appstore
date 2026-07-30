@@ -25,6 +25,16 @@ const searchHistoryPref = "searchHistoryPref";
 /// em vez de ir direto pro Dashboard.
 const hasCompletedOnboardingPref = "hasCompletedOnboardingPref";
 
+/// true/false do interruptor "App Protect" (Settings > App Protect) - ver
+/// AppProtectService.dart. Ligado por padrão.
+const appProtectEnabledPref = "appProtectEnabledPref";
+
+/// Histórico (JSON) das últimas verificações reais do App Protect, pra
+/// tela de App Protect mostrar "verificado recentemente" com dado de
+/// verdade em vez de mockado.
+const appProtectScanHistoryPref = "appProtectScanHistoryPref";
+
+
 const maxItemCount = 20;
 
 const baseUrl = "https://assets.iqonic.design/old-themeforest-images/Mimik";
