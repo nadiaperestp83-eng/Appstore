@@ -3,6 +3,7 @@ import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/model/PSModel.dart';
 import 'package:playstore_flutter/models/store_app.dart';
 import 'package:playstore_flutter/services/apk_installer_service.dart';
+import 'package:playstore_flutter/services/app_protect_service.dart';
 import 'package:playstore_flutter/utils/AppColors.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
@@ -134,9 +135,17 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
           if (!mounted) return;
           setState(() => _progress = p);
         },
+        onSecurityWarning: (verdict) => _showAppProtectWarning(context, verdict),
       );
       if (!mounted) return;
       setState(() => _status = _InstallStatus.installed);
+    } on ApkInstallerSecurityException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _status = _InstallStatus.error;
+        _errorMessage = e.message;
+      });
+      toast(e.message);
     } on ApkInstallerPermissionRequiredException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -159,6 +168,104 @@ class _InstallButtonState extends State<InstallButton> with WidgetsBindingObserv
       });
       toast(_errorMessage!);
     }
+  }
+
+  /// Aviso NEUTRO de transparência do App Protect: mostra as permissões
+  /// sensíveis que o manifesto do .apk declara e deixa a decisão 100% com
+  /// o usuário - "Continuar mesmo assim" e "Cancelar" são igualmente
+  /// acessíveis, nenhuma delas é forçada. Nunca aparece por causa de
+  /// assinatura/keystore/fork - só por permissões (ver AppProtectService).
+  Future<bool> _showAppProtectWarning(BuildContext context, AppProtectVerdict verdict) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(color: AppleColors.background, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(color: AppleColors.divider, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              20.height,
+              Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: Colors.orange[700], size: 24),
+                  10.width,
+                  Text('App Protect', style: boldTextStyle(size: 17, color: AppleColors.textPrimary)).expand(),
+                ],
+              ),
+              12.height,
+              Text(
+                'Este app pede permissões que vale a pena conhecer antes de instalar. Isto é só um aviso - você decide.',
+                style: secondaryTextStyle(color: AppleColors.textSecondary),
+              ),
+              16.height,
+              ...verdict.sensitivePermissions.map(
+                (p) => Padding(
+                  padding: EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, size: 5, color: AppleColors.textSecondary),
+                      8.width,
+                      Text(_humanReadablePermission(p), style: primaryTextStyle(color: AppleColors.textPrimary, size: 13)),
+                    ],
+                  ),
+                ),
+              ),
+              20.height,
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      style: OutlinedButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 12)),
+                      child: Text('Cancelar'),
+                    ),
+                  ),
+                  12.width,
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppleColors.accentBlue, padding: EdgeInsets.symmetric(vertical: 12)),
+                      child: Text('Continuar mesmo assim', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    // Fechar o sheet sem escolher (ex: tocar fora) equivale a "continuar" -
+    // é só um aviso, nunca um bloqueio silencioso.
+    return result ?? true;
+  }
+
+  String _humanReadablePermission(String androidPermission) {
+    const labels = {
+      'android.permission.SEND_SMS': 'Enviar SMS',
+      'android.permission.RECEIVE_SMS': 'Receber SMS',
+      'android.permission.READ_SMS': 'Ler SMS',
+      'android.permission.CALL_PHONE': 'Fazer ligações',
+      'android.permission.READ_CALL_LOG': 'Ler histórico de chamadas',
+      'android.permission.WRITE_CALL_LOG': 'Modificar histórico de chamadas',
+      'android.permission.PROCESS_OUTGOING_CALLS': 'Monitorar chamadas realizadas',
+      'android.permission.BIND_DEVICE_ADMIN': 'Administrador do dispositivo',
+      'android.permission.BIND_ACCESSIBILITY_SERVICE': 'Serviço de acessibilidade',
+      'android.permission.SYSTEM_ALERT_WINDOW': 'Exibir sobre outros apps',
+      'android.permission.REQUEST_INSTALL_PACKAGES': 'Instalar outros apps',
+    };
+    return labels[androidPermission] ?? androidPermission.replaceFirst('android.permission.', '');
   }
 
   @override
