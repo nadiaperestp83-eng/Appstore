@@ -22,7 +22,6 @@ dependencies:
   sqflite: ^2.3.2
   shared_preferences: ^2.2.3
   fluttertoast: ^9.1.0
-  share_plus: ^12.0.2
   flutter_vector_icons: ^2.0.0
   flutter_staggered_animations: ^1.1.1
   flare_flutter: ^3.0.1
@@ -36,7 +35,9 @@ dependencies:
   # Minhas adições (loja descentralizada GitHub + F-Droid)
   # =========================================================
   http: ^1.2.2
-
+  crypto: ^3.0.3
+  share_plus: ^12.0.2
+ 
   # Cache local (fork ativo do Isar)
   isar_community: ^3.3.2
   isar_community_flutter_libs: ^3.3.2
