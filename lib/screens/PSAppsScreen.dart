@@ -114,11 +114,13 @@ class PSAppsScreenState extends State<PSAppsScreen> with TickerProviderStateMixi
 }
 
 /// Ordem de exibição das seções reais de [getAptoideAppsBySection].
+/// "More Apps" (a última) mistura Aptoide + Obtainium (Direct/HTML) - ver
+/// o comentário de [getAptoideAppsBySection] em PSDataProvider.dart.
 const List<String> gamesAppsForYouSectionOrder = [
   'Recommended for you',
   'Educational apps',
   'Music Players',
-  'Tools & utilities',
+  'More Apps',
 ];
 
 /// Carrosséis "For you" da aba Apps - mesmo comportamento honesto de
