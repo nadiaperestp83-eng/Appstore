@@ -140,7 +140,7 @@ class PSPlayProtectScreenState extends State<PSPlayProtectScreen> {
                 10.width,
                 Text(
                   'Nunca verifica ou exige assinatura/keystore. APKs de debug, forks e builds locais (inclusive compilados no próprio celular) são sempre aceitos sem alerta.',
-                  style: secondaryTextStyle(color: AppleColors.textSecondary, size: 12.5),
+                  style: secondaryTextStyle(color: AppleColors.textSecondary, size: 12),
                 ).expand(),
               ],
             ),
