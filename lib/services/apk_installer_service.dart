@@ -5,12 +5,25 @@ import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_device_apps/flutter_device_apps.dart';
 import '../models/store_app.dart';
+import 'app_protect_service.dart';
 
 class ApkInstallerException implements Exception {
   final String message;
   ApkInstallerException(this.message);
   @override
   String toString() => 'ApkInstallerException: $message';
+}
+
+/// Lançada quando o App Protect bloqueia a instalação por um motivo REAL
+/// (hash do arquivo bate com uma ameaça confirmada). É o único tipo de
+/// bloqueio que o App Protect faz - nunca por assinatura/keystore, nunca
+/// só por permissões sensíveis (isso vira aviso, não exceção).
+class ApkInstallerSecurityException implements Exception {
+  final AppProtectVerdict verdict;
+  final String message;
+  ApkInstallerSecurityException(this.message, this.verdict);
+  @override
+  String toString() => 'ApkInstallerSecurityException: $message';
 }
 
 /// Lançada quando a permissão "Instalar apps desconhecidos" ainda não foi
@@ -51,9 +64,15 @@ class ApkInstallerService {
 
   /// Fluxo principal: se o app já foi instalado/aberto nesta sessão, abre-o.
   /// Caso contrário, baixa o .apk e aciona o instalador do sistema.
+  ///
+  /// [onSecurityWarning] é chamado quando o App Protect encontra permissões
+  /// sensíveis no manifesto (ver AppProtectService.dart) - é um AVISO, não
+  /// um bloqueio: se retornar `true` (ou se ninguém estiver escutando, ou
+  /// se o App Protect estiver desligado), a instalação segue normalmente.
   Future<void> installOrOpen(
     StoreApp app, {
     void Function(double progress)? onProgress,
+    Future<bool> Function(AppProtectVerdict verdict)? onSecurityWarning,
   }) async {
     final knownPackageName = app.packageName;
     if (knownPackageName != null && knownPackageName.isNotEmpty) {
@@ -71,7 +90,12 @@ class ApkInstallerService {
     // Timeout duro no fluxo inteiro: nada aqui (download, gravação em disco,
     // permissão, abertura do instalador) pode deixar o botão preso na barra
     // de progresso pra sempre, mesmo se algum plugin nativo travar.
-    await downloadAndInstall(app.downloadUrl, fileName: fileName, onProgress: onProgress).timeout(
+    await downloadAndInstall(
+      app.downloadUrl,
+      fileName: fileName,
+      onProgress: onProgress,
+      onSecurityWarning: onSecurityWarning,
+    ).timeout(
       const Duration(minutes: 3),
       onTimeout: () => throw ApkInstallerException(
         'A instalação demorou demais e foi cancelada. Verifique sua conexão e tente de novo.',
@@ -87,11 +111,20 @@ class ApkInstallerService {
     }
   }
 
-  /// Baixa o .apk de [downloadUrl] e abre o instalador nativo do Android.
+  /// Baixa o .apk de [downloadUrl] e aciona o instalador nativo do Android -
+  /// depois de passar pelo App Protect (ver AppProtectService.dart):
+  /// 1. Camada rápida: origem (lista branca) + SHA-256 (ameaças conhecidas).
+  /// 2. Camada nativa: Package Manager lê as permissões do manifesto.
+  /// Isso NUNCA verifica assinatura/keystore - debug key, fork, build local
+  /// compilado no próprio celular, tudo passa igual. O único bloqueio real
+  /// é hash de malware confirmado ([ApkInstallerSecurityException]);
+  /// permissões sensíveis só disparam [onSecurityWarning] (aviso, não
+  /// trava) - se o App Protect estiver desligado, nada disso roda.
   Future<void> downloadAndInstall(
     String downloadUrl, {
     required String fileName,
     void Function(double progress)? onProgress,
+    Future<bool> Function(AppProtectVerdict verdict)? onSecurityWarning,
   }) async {
     if (!downloadUrl.toLowerCase().endsWith('.apk')) {
       throw ApkInstallerException('URL não aponta para um .apk direto: $downloadUrl');
@@ -105,6 +138,28 @@ class ApkInstallerService {
     }
 
     final file = await _download(downloadUrl, fileName, onProgress);
+
+    final verdict = await AppProtectService.instance.inspect(downloadUrl: downloadUrl, apkFile: file);
+
+    if (verdict.shouldBlockInstall) {
+      await file.delete().catchError((_) => file);
+      throw ApkInstallerSecurityException(
+        'O App Protect bloqueou esta instalação: o arquivo corresponde a uma ameaça conhecida.',
+        verdict,
+      );
+    }
+
+    if (verdict.hasTransparencyWarning) {
+      // Aviso neutro: se ninguém estiver escutando, ou se o usuário
+      // confirmar, a instalação segue. Só para de verdade se o próprio
+      // usuário escolher cancelar.
+      final shouldContinue = onSecurityWarning == null || await onSecurityWarning(verdict);
+      if (!shouldContinue) {
+        await file.delete().catchError((_) => file);
+        throw ApkInstallerException('Instalação cancelada após o aviso do App Protect.');
+      }
+    }
+
     final result = await OpenFile.open(file.path);
 
     if (result.type != ResultType.done) {
