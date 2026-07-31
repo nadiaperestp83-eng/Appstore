@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:nb_utils/nb_utils.dart';
 import 'package:playstore_flutter/screens/PSDashboardScreen.dart';
 import 'package:playstore_flutter/screens/PSWelcomeScreen.dart';
+import 'package:playstore_flutter/services/obtainium_catalog_engine.dart';
 import 'package:playstore_flutter/utils/AppWidget.dart';
 import 'package:playstore_flutter/utils/AppleColors.dart';
 import 'package:playstore_flutter/utils/PSConstants.dart';
@@ -32,6 +33,15 @@ class PSSplashScreenState extends State<PSSplashScreen> {
   }
 
   init() async {
+    // Dispara em segundo plano, sem esperar e sem travar o splash: quando
+    // o usuário chegar na aba Apps, o catálogo do Obtainium (~230 apps)
+    // já deve estar em cache (ver ObtainiumCatalogEngine._cachedCatalog),
+    // então "More Apps" carrega na hora em vez de baixar tudo ali.
+    ObtainiumCatalogEngine().fetchMoreApps(limit: 1).catchError((e) {
+      // ignore: avoid_print
+      print('[PSSplashScreen] Pré-aquecimento do catálogo Obtainium falhou (sem problema, tenta de novo na hora certa): $e');
+      return <dynamic>[];
+    });
     checkFirstSeen();
   }
 
