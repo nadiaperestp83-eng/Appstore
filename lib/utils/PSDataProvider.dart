@@ -413,9 +413,24 @@ Future<Map<String, List<PSGameModel>>> getAptoideAppsBySection({
         return MapEntry(entry.key, <PSGameModel>[]);
       }
     }),
+    // BUG DO CARREGAMENTO LONGO: na primeira vez que roda no processo, o
+    // Obtainium baixa e faz o parse do catálogo inteiro (~230 arquivos, em
+    // lotes) antes de conseguir filtrar "More Apps" - sem limite de tempo
+    // aqui, uma rede lenta prendia a aba Apps inteira esperando só essa
+    // parte. Timeout de 4s: se não voltar a tempo, "More Apps" só mostra o
+    // que a Aptoide já trouxe (a busca do Obtainium continua em segundo
+    // plano e fica em cache pra próxima vez - ver [PSSplashScreen] que já
+    // pré-aquece esse cache antes do usuário chegar em qualquer aba).
     obtainium.fetchMoreApps(limit: perSectionLimit).then((apps) {
       return MapEntry('More Apps', apps.map(_storeAppToGameModel).toList());
-    }).catchError((e) {
+    }).timeout(
+      const Duration(seconds: 4),
+      onTimeout: () {
+        // ignore: avoid_print
+        print('[getAptoideAppsBySection] Obtainium (More Apps) demorou demais - seguindo só com Aptoide.');
+        return MapEntry('More Apps', <PSGameModel>[]);
+      },
+    ).catchError((e) {
       // ignore: avoid_print
       print('[getAptoideAppsBySection] Obtainium (More Apps) falhou: $e');
       return MapEntry('More Apps', <PSGameModel>[]);
