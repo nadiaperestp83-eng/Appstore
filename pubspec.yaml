@@ -22,6 +22,7 @@ dependencies:
   sqflite: ^2.3.2
   shared_preferences: ^2.2.3
   fluttertoast: ^9.1.0
+  share_plus: ^12.0.2
   flutter_vector_icons: ^2.0.0
   flutter_staggered_animations: ^1.1.1
   flare_flutter: ^3.0.1
@@ -35,9 +36,7 @@ dependencies:
   # Minhas adições (loja descentralizada GitHub + F-Droid)
   # =========================================================
   http: ^1.2.2
-  crypto: ^3.0.3
-  share_plus: ^12.0.2
- 
+
   # Cache local (fork ativo do Isar)
   isar_community: ^3.3.2
   isar_community_flutter_libs: ^3.3.2
@@ -47,12 +46,18 @@ dependencies:
   open_file: ^3.5.7
   permission_handler: ^11.3.1
   device_apps: ^2.2.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
   args: ^2.4.2
+
+  # Gera os ícones do Android automaticamente a partir de UMA imagem
+  # (image_path abaixo) - veja a config em "flutter_launcher_icons:" mais
+  # embaixo neste arquivo, e o passo a passo no comentário logo ali.
+  flutter_launcher_icons: ^0.13.1
 
 dependency_overrides:
   platform: ^3.1.5
@@ -67,7 +72,13 @@ dependency_overrides:
 
 flutter:
   uses-material-design: true
+  assets:
+    - images/playStore/
 
-  # Descomente e ajuste se o seu projeto já usa uma pasta de assets:
-  # assets:
-  #   - assets/images/
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "images/icon/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "images/icon/icon.png"
