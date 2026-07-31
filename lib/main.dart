@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
     return Observer(
       builder: (_) {
         return MaterialApp(
-          title: 'PlayStore flutter',
+          title: 'Zircon',
           theme: !appStore.isDarkModeOn ? AppThemeData.lightTheme : AppThemeData.darkTheme,
           builder: scrollBehaviour(),
           debugShowCheckedModeBanner: false,
