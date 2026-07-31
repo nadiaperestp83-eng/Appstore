@@ -1,4 +1,4 @@
-const PSAppName = 'Google Play Store';
+const PSAppName = 'Zircon';
 
 const Review =
     'By keeping all these questions in our mind today we have come up with a new topic called “A Guide on Paragraph Writing”. With this guide, we’ll '
