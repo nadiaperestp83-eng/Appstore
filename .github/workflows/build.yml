@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Necessário para o workflow poder criar Releases no repositório
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -116,7 +120,6 @@ jobs:
               f.write(content)
           print("OK: pubspec.yaml atualizado com flutter_device_apps: ^0.8.1")
 
-          # Atualizar os imports nos arquivos de serviço para o novo pacote
           for filepath in glob.glob("lib/**/*.dart", recursive=True):
               with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                   code = f.read()
@@ -159,6 +162,7 @@ jobs:
           else
             echo "AVISO: images/icon/icon.png não existe - pulando geração do ícone (o build continua com o ícone atual)."
           fi
+
       - name: Gerar código (Isar build_runner)
         run: dart run build_runner build --delete-conflicting-outputs
 
@@ -169,11 +173,44 @@ jobs:
       - name: Rodar testes
         run: flutter test
 
+      # Lê o "version:" do pubspec.yaml (ex.: 1.0.0+1) para extrair o version_name (1.0.0)
+      - name: Read app version from pubspec.yaml
+        id: version
+        run: |
+          FULL_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          VERSION_NAME=$(echo "$FULL_VERSION" | cut -d'+' -f1)
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+
+      # Gera a keystore no caminho exigido pelo Gradle no ambiente de CI para evitar falhas de assinatura no release
+      - name: Generate Android keystore for build
+        run: |
+          mkdir -p /home/runner/.config/.android
+          keytool -genkey -v -keystore /home/runner/.config/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+
       - name: Build APK (release)
         run: flutter build apk --release --android-skip-build-dependency-validation
 
-      - name: Upload do APK gerado
+      # Define a tag única da Release baseada no pubspec e no número do run do GitHub Actions
+      - name: Set release tag
+        id: tag
+        run: echo "tag=v${{ steps.version.outputs.version_name }}-build${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare APK for Release
+        run: |
+          mkdir -p release
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             "release/zircon-${{ steps.tag.outputs.tag }}.apk"
+
+      - name: Upload do APK gerado como artefato interno
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: release/*.apk
+
+      - name: Create GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "Zircon ${{ steps.tag.outputs.tag }}"
+          generate_release_notes: true
+          files: release/*.apk
